@@ -340,13 +340,17 @@
 
   <div class="ynab-connect" id="ynabConnectBox">
     <div class="ynab-logo">YNAB</div>
-    <div class="ynab-sub">Conecta tu cuenta para ver datos en tiempo real.<br>Tu API key se guarda solo en memoria — nunca en la base de datos.</div>
+    <div class="ynab-sub">Conecta tu cuenta para ver datos en tiempo real.</div>
     <div class="form-group" style="text-align:left;max-width:400px;margin:0 auto 12px">
       <label>Personal Access Token</label>
-      <input type="password" id="ynabToken" placeholder="Pega tu token aquí — YNAB → My Account → Developer Settings">
+      <input type="password" id="ynabTokenInput" placeholder="YNAB → My Account → Developer Settings">
+    </div>
+    <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:14px">
+      <input type="checkbox" id="rememberToken" style="width:auto;accent-color:var(--teal);" checked>
+      <label for="rememberToken" style="font-size:0.8rem;color:var(--muted);text-transform:none;letter-spacing:0;margin:0;cursor:pointer">Recordar en este dispositivo</label>
     </div>
     <button class="btn btn-primary" onclick="connectYNAB()"><span id="connectSpinner"></span>Conectar YNAB</button>
-    <div style="font-size:0.74rem;color:var(--muted);margin-top:10px">⚠️ No compartas tu token con nadie. No lo incluyas en GitHub.</div>
+    <div style="font-size:0.74rem;color:var(--muted);margin-top:10px">⚠️ Solo se guarda en este dispositivo. Nunca en Firebase ni GitHub.</div>
   </div>
 
   <div id="ynabContent" style="display:none">
@@ -891,20 +895,26 @@ function toggleCheck(el) {
 }
 
 // ── YNAB CONNECT ──────────────────────────────────────────────────────────────
-async function connectYNAB() {
-  const token = document.getElementById('ynabToken').value.trim();
+async function connectYNAB(autoToken) {
+  const token = autoToken || document.getElementById('ynabTokenInput').value.trim();
   if(!token) { alert('Pega tu Personal Access Token de YNAB'); return; }
 
   const spinner = document.getElementById('connectSpinner');
-  spinner.innerHTML = '<span class="spinner"></span>';
+  if(spinner) spinner.innerHTML = '<span class="spinner"></span>';
 
   try {
     const r = await fetch(`${YNAB_BASE}/budgets`, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
-    if(!r.ok) throw new Error('Token inválido');
+    if(!r.ok) throw new Error('Token inválido o expirado');
     const data = await r.json();
     ynabToken = token;
+
+    // Save to localStorage if checkbox checked (or if auto-connecting)
+    const remember = document.getElementById('rememberToken');
+    if(!autoToken && remember && remember.checked) {
+      localStorage.setItem('ynab_token', token);
+    }
 
     // Populate budget selector
     const sel = document.getElementById('budgetSelect');
@@ -926,19 +936,33 @@ async function connectYNAB() {
       loadBudgetData();
     }
   } catch(e) {
-    spinner.innerHTML = '';
-    alert('Error al conectar: ' + e.message + '. Verifica tu token en YNAB → My Account → Developer Settings');
+    if(autoToken) {
+      // Silent fail on auto-connect — just show the form
+      localStorage.removeItem('ynab_token');
+      console.log('Auto-connect failed, token may have expired');
+    } else {
+      if(spinner) spinner.innerHTML = '';
+      alert('Error al conectar: ' + e.message + '. Genera un nuevo token en YNAB → My Account → Developer Settings');
+    }
   }
-  spinner.innerHTML = '';
+  if(spinner) spinner.innerHTML = '';
 }
 
 function disconnectYNAB() {
   ynabToken = null; currentBudgetId = null;
+  localStorage.removeItem('ynab_token');
   document.getElementById('ynabConnectBox').style.display = 'block';
   document.getElementById('ynabContent').style.display = 'none';
-  document.getElementById('ynabToken').value = '';
+  document.getElementById('ynabTokenInput').value = '';
   document.getElementById('connectionBadge').textContent = '⚪ YNAB desconectado';
   document.getElementById('connectionBadge').className = 'badge b-blue';
+}
+
+function autoConnectYNAB() {
+  const saved = localStorage.getItem('ynab_token');
+  if(saved) {
+    connectYNAB(saved);
+  }
 }
 
 async function loadBudgetData() {
@@ -1785,6 +1809,7 @@ updateOverview();
 renderBudgetTemplate();
 updateDecision();
 loadVisitTracker();
+autoConnectYNAB();
 </script>
 </body>
 </html>
