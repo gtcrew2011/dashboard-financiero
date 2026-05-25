@@ -512,7 +512,7 @@
 
 <script>
 // ── FIREBASE CONFIG ───────────────────────────────────────────────────────────
-const DB = 'https://guia-salud-fg-default-rtdb.firebaseio.com';
+const DB = 'https://dashboard-financiero-gt-default-rtdb.firebaseio.com/';
 
 async function fbGet(path) {
   try { const r = await fetch(`${DB}/${path}.json`); return r.ok ? r.json() : null; }
@@ -531,7 +531,7 @@ async function fbDelete(path) {
 
 // ── YNAB CONFIG ───────────────────────────────────────────────────────────────
 const YNAB_BASE = 'https://api.ynab.com/v1';
-let ynabToken = null;
+let ynabToken = clPnzIRX5teTHPpsj-wiLgtcqlZ6fuXa85W0YooTDXw;
 let currentBudgetId = null;
 
 // Debt config
