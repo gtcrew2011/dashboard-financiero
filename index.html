@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Financiero — Felipe & Blanmeli</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Oswald:wght@500;700&display=swap');
+
+  :root {
+    --bg:      #161f2c;
+    --surface: #1e2a3a;
+    --card:    #243245;
+    --border:  #2e4060;
+    --accent:  #e05252;
+    --blue:    #4a9eca;
+    --green:   #4caf7d;
+    --gold:    #e8b84b;
+    --teal:    #45b8ac;
+    --orange:  #e8894b;
+    --purple:  #9b72cf;
+    --text:    #dde6f0;
+    --muted:   #8ba0b8;
+    --soft:    #b8c8dc;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; line-height: 1.65; font-size: 15px; }
+
+  /* HEADER */
+  header { background: linear-gradient(160deg, #1a2840 0%, #0f1924 100%); border-bottom: 2px solid rgba(224,82,82,0.4); padding: 20px 18px 16px; text-align: center; }
+  header h1 { font-family: 'Oswald', sans-serif; font-size: clamp(1.2rem,5vw,1.8rem); font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #fff; }
+  header p { color: var(--muted); font-size: 0.8rem; margin-top: 4px; }
+  .badges { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+  .badge { font-size: 0.68rem; font-weight: 600; padding: 3px 10px; border-radius: 20px; }
+  .b-red   { background: rgba(224,82,82,0.2);  border: 1px solid rgba(224,82,82,0.4);  color: #f1a8a8; }
+  .b-green { background: rgba(76,175,125,0.15); border: 1px solid rgba(76,175,125,0.4); color: #90d4b0; }
+  .b-gold  { background: rgba(232,184,75,0.15); border: 1px solid rgba(232,184,75,0.4); color: #f5d98a; }
+  .b-blue  { background: rgba(74,158,202,0.15); border: 1px solid rgba(74,158,202,0.4); color: #a8d4f0; }
+
+  /* TABS */
+  .tab-bar { display: flex; overflow-x: auto; background: #111922; border-bottom: 1px solid var(--border); -webkit-overflow-scrolling: touch; scrollbar-width: none; position: sticky; top: 0; z-index: 100; }
+  .tab-bar::-webkit-scrollbar { display: none; }
+  .tab { flex: 0 0 auto; padding: 12px 15px; font-family: 'Oswald', sans-serif; font-size: 0.76rem; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.18s; white-space: nowrap; user-select: none; }
+  .tab:hover { color: var(--soft); }
+  .tab.active { color: #fff; border-bottom-color: var(--accent); }
+
+  /* PANELS */
+  .panel { display: none; padding: 18px 14px 48px; max-width: 780px; margin: 0 auto; }
+  .panel.active { display: block; }
+
+  /* SECTION HDR */
+  .sec-hdr { border-left: 3px solid var(--accent); padding: 8px 12px; font-family: 'Oswald', sans-serif; font-size: 0.85rem; letter-spacing: 1.5px; text-transform: uppercase; color: var(--soft); margin: 18px 0 10px; background: rgba(255,255,255,0.02); border-radius: 0 4px 4px 0; }
+  .sec-hdr.green  { border-left-color: var(--green); }
+  .sec-hdr.blue   { border-left-color: var(--blue); }
+  .sec-hdr.gold   { border-left-color: var(--gold); }
+  .sec-hdr.teal   { border-left-color: var(--teal); }
+  .sec-hdr.purple { border-left-color: var(--purple); }
+
+  /* CARDS */
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px; margin-bottom: 11px; }
+
+  /* ALERTS */
+  .alert { border-radius: 8px; padding: 10px 13px; font-size: 0.84rem; margin-bottom: 10px; display: block; line-height: 1.55; }
+  .alert-icon { margin-right: 6px; }
+  .alert-warn   { background: rgba(192,57,43,0.12);  border: 1px solid rgba(192,57,43,0.3);  color: #f0a8a8; }
+  .alert-ok     { background: rgba(76,175,125,0.1);   border: 1px solid rgba(76,175,125,0.3); color: #90d4b0; }
+  .alert-info   { background: rgba(74,158,202,0.1);   border: 1px solid rgba(74,158,202,0.3); color: #a8d4f0; }
+  .alert-gold   { background: rgba(232,184,75,0.08);  border: 1px solid rgba(232,184,75,0.3); color: #f5d98a; }
+
+  /* FORMS */
+  .form-group { margin-bottom: 12px; }
+  label { display: block; font-size: 0.77rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 5px; }
+  input, select, textarea {
+    width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    color: var(--text); font-family: 'Inter', sans-serif; font-size: 0.88rem; padding: 9px 12px;
+    outline: none; transition: border-color 0.15s; -webkit-appearance: none;
+  }
+  input:focus, select:focus, textarea:focus { border-color: var(--teal); }
+  select option { background: var(--surface); }
+  textarea { resize: vertical; min-height: 72px; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+  @media(max-width:480px) { .two-col, .three-col { grid-template-columns: 1fr; } }
+
+  /* BUTTONS */
+  .btn { font-family: 'Oswald', sans-serif; font-size: 0.84rem; letter-spacing: 1px; text-transform: uppercase; padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; transition: all 0.15s; display: inline-flex; align-items: center; gap: 6px; }
+  .btn-primary { background: var(--teal); color: #fff; }
+  .btn-primary:hover { opacity: 0.88; }
+  .btn-primary:active { transform: scale(0.97); }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-ghost { background: var(--surface); border: 1px solid var(--border); color: var(--soft); }
+  .btn-ghost:hover { background: var(--border); }
+  .btn-danger { background: rgba(224,82,82,0.15); border: 1px solid rgba(224,82,82,0.3); color: #f0a8a8; font-size: 0.75rem; padding: 5px 11px; }
+  .btn-success { background: var(--green); color: #fff; }
+  .btn-full { width: 100%; justify-content: center; margin-top: 4px; }
+
+  /* PROGRESS */
+  .prog-wrap { background: rgba(255,255,255,0.06); border-radius: 10px; height: 10px; overflow: hidden; margin: 6px 0; }
+  .prog-bar { height: 100%; border-radius: 10px; transition: width 0.6s ease; }
+
+  /* STAT GRID */
+  .stat-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 9px; margin-bottom: 14px; }
+  @media(max-width:440px) { .stat-grid { grid-template-columns: repeat(2,1fr); } }
+  .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 12px 10px; text-align: center; }
+  .stat-val { font-family: 'Oswald', sans-serif; font-size: 1.4rem; font-weight: 700; line-height: 1; margin-bottom: 3px; }
+  .stat-lbl { font-size: 0.69rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px; }
+
+  /* CATEGORY ROW */
+  .cat-row { padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
+  .cat-row:last-child { border-bottom: none; }
+  .cat-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+  .cat-name { font-size: 0.87rem; font-weight: 500; }
+  .cat-amounts { font-size: 0.82rem; color: var(--muted); }
+  .cat-pct { font-family: 'Oswald', sans-serif; font-size: 0.82rem; font-weight: 700; }
+
+  /* DEBT ITEM */
+  .debt-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px; margin-bottom: 10px; }
+  .debt-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; gap: 10px; }
+  .debt-name { font-family: 'Oswald', sans-serif; font-size: 0.95rem; font-weight: 700; color: #fff; }
+  .debt-status-badge { font-size: 0.7rem; font-weight: 600; padding: 2px 9px; border-radius: 20px; white-space: nowrap; }
+  .ds-collection { background: rgba(224,82,82,0.2); color: #f0a8a8; }
+  .ds-current     { background: rgba(76,175,125,0.2); color: #90d4b0; }
+  .ds-pending     { background: rgba(232,184,75,0.15); color: #f5d98a; }
+  .ds-done        { background: rgba(76,175,125,0.3); color: #fff; }
+  .debt-amounts { display: flex; justify-content: space-between; font-size: 0.82rem; color: var(--muted); margin-bottom: 6px; }
+  .debt-balance { font-family: 'Oswald', sans-serif; font-size: 1.1rem; font-weight: 700; }
+  .debt-payments-log { margin-top: 10px; }
+  .payment-entry { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 0.8rem; }
+  .payment-entry:last-child { border-bottom: none; }
+  .payment-date { color: var(--muted); }
+  .payment-amount { color: var(--green); font-weight: 600; font-family: 'Oswald', sans-serif; }
+  .payment-note { color: var(--muted); font-style: italic; font-size: 0.76rem; }
+
+  /* MEETING LOG */
+  .meeting-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px; margin-bottom: 10px; }
+  .meeting-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .meeting-date { font-family: 'Oswald', sans-serif; font-size: 0.9rem; color: var(--gold); }
+  .meeting-badges { display: flex; gap: 6px; flex-wrap: wrap; }
+  .m-badge { font-size: 0.69rem; font-weight: 600; padding: 2px 8px; border-radius: 20px; }
+  .mb-yes { background: rgba(76,175,125,0.2); color: #90d4b0; }
+  .mb-no  { background: rgba(224,82,82,0.2);  color: #f0a8a8; }
+  .meeting-notes { font-size: 0.83rem; color: var(--soft); line-height: 1.55; margin-top: 6px; }
+  .meeting-commit { font-size: 0.8rem; color: var(--teal); margin-top: 6px; font-style: italic; }
+
+  /* GROCERY CHALLENGE */
+  .challenge-month { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px; margin-bottom: 10px; }
+  .challenge-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .challenge-month-name { font-family: 'Oswald', sans-serif; font-size: 1rem; color: #fff; }
+  .challenge-result { font-size: 0.75rem; font-weight: 700; padding: 3px 10px; border-radius: 20px; }
+  .cr-win  { background: rgba(76,175,125,0.25); color: #90d4b0; }
+  .cr-lose { background: rgba(224,82,82,0.2);  color: #f0a8a8; }
+  .cr-pending { background: rgba(232,184,75,0.15); color: #f5d98a; }
+
+  /* YNAB CONNECT */
+  .ynab-connect { background: linear-gradient(135deg, rgba(74,158,202,0.1), rgba(69,184,172,0.08)); border: 1px solid rgba(74,158,202,0.3); border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 16px; }
+  .ynab-logo { font-family: 'Oswald', sans-serif; font-size: 1.4rem; font-weight: 700; color: var(--blue); margin-bottom: 6px; letter-spacing: 2px; }
+  .ynab-sub { font-size: 0.82rem; color: var(--muted); margin-bottom: 14px; }
+
+  /* SEMAPHORE */
+  .semaphore { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
+  .sem-green  { background: var(--green); box-shadow: 0 0 6px rgba(76,175,125,0.6); }
+  .sem-yellow { background: var(--gold); box-shadow: 0 0 6px rgba(232,184,75,0.6); }
+  .sem-red    { background: var(--accent); box-shadow: 0 0 6px rgba(224,82,82,0.6); }
+
+  /* CASCADE BOX */
+  .cascade-box { background: linear-gradient(135deg, rgba(76,175,125,0.08), rgba(69,184,172,0.06)); border: 1px solid rgba(76,175,125,0.25); border-radius: 10px; padding: 14px; margin-bottom: 12px; }
+  .cascade-title { font-family: 'Oswald', sans-serif; font-size: 0.82rem; color: var(--teal); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 10px; }
+  .cascade-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 0.85rem; }
+  .cascade-row:last-child { border-bottom: none; }
+  .cascade-date { color: var(--muted); }
+  .cascade-amount { color: var(--green); font-weight: 700; font-family: 'Oswald', sans-serif; }
+
+  /* CHECKLIST */
+  .check-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 0.86rem; }
+  .check-row:last-child { border-bottom: none; }
+  .check-box { width: 18px; height: 18px; border-radius: 4px; border: 1px solid var(--border); background: var(--surface); cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 0.7rem; transition: all 0.15s; }
+  .check-box.checked { background: var(--teal); border-color: var(--teal); color: #fff; }
+
+  /* SPINNER */
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spinner { width: 18px; height: 18px; border: 2px solid var(--border); border-top-color: var(--teal); border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block; vertical-align: middle; margin-right: 6px; }
+
+  /* CONFETTI ANIMATION */
+  @keyframes confettiFall { to { transform: translateY(100vh) rotate(720deg); opacity: 0; } }
+  .confetti-piece { position: fixed; width: 10px; height: 10px; top: -10px; animation: confettiFall linear forwards; z-index: 9999; border-radius: 2px; pointer-events: none; }
+
+  /* LOADING */
+  .loading { text-align: center; padding: 24px; color: var(--muted); font-size: 0.85rem; }
+
+  /* EMPTY */
+  .empty { text-align: center; padding: 30px 16px; color: var(--muted); }
+  .empty-icon { font-size: 2.2rem; margin-bottom: 8px; }
+  .empty p { font-size: 0.85rem; }
+
+  /* TALLY */
+  .tally-row { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 0.85rem; }
+  .tally-row:last-child { border-bottom: none; }
+  .tally-label { color: var(--text); }
+  .tally-val { font-weight: 600; }
+
+  footer { text-align: center; padding: 16px; color: var(--muted); font-size: 0.72rem; border-top: 1px solid var(--border); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Dashboard Financiero</h1>
+  <p>Felipe Gil & Blanmeli Torrealba &nbsp;·&nbsp; 2026</p>
+  <div class="badges">
+    <span class="badge b-red" id="totalDebtBadge">Deuda: ~$57,175</span>
+    <span class="badge b-gold">Ingreso: $7,120/mes</span>
+    <span class="badge b-green" id="connectionBadge">⚪ YNAB desconectado</span>
+  </div>
+</header>
+
+<div class="tab-bar">
+  <div class="tab active" onclick="showTab('overview',this)">📊 Resumen</div>
+  <div class="tab" onclick="showTab('ynab',this)">💰 YNAB Live</div>
+  <div class="tab" onclick="showTab('deudas',this)">💳 Deudas</div>
+  <div class="tab" onclick="showTab('reunion',this)">👫 Reunión</div>
+  <div class="tab" onclick="showTab('groceries',this)">🛒 Reto Groceries</div>
+</div>
+
+<!-- ══ OVERVIEW ══ -->
+<div id="overview" class="panel active">
+
+  <div class="sec-hdr">Resumen del Mes</div>
+  <div class="stat-grid" id="overviewStats">
+    <div class="stat-card"><div class="stat-val" style="color:var(--accent)" id="ov-spent">—</div><div class="stat-lbl">Gastado este mes</div></div>
+    <div class="stat-card"><div class="stat-val" style="color:var(--green)" id="ov-income">$7,120</div><div class="stat-lbl">Ingreso mensual</div></div>
+    <div class="stat-card"><div class="stat-val" style="color:var(--gold)" id="ov-left">—</div><div class="stat-lbl">Disponible</div></div>
+    <div class="stat-card"><div class="stat-val" style="color:var(--teal)" id="ov-groceries">—</div><div class="stat-lbl">Groceries mes</div></div>
+    <div class="stat-card"><div class="stat-val" style="color:var(--orange)" id="ov-dining">—</div><div class="stat-lbl">Dining out mes</div></div>
+    <div class="stat-card"><div class="stat-val" style="color:var(--green)" id="ov-debt-paid">$0</div><div class="stat-lbl">Deuda pagada 2026</div></div>
+  </div>
+
+  <div class="alert alert-info"><span class="alert-icon">💡</span>Conecta YNAB en el tab "💰 YNAB Live" para ver datos en tiempo real de groceries y dining out.</div>
+
+  <div class="sec-hdr gold">Efecto Cascada — Deudas con Fecha de Término</div>
+  <div class="cascade-box">
+    <div class="cascade-title">Dinero que se libera automáticamente</div>
+    <div class="cascade-row"><div class="cascade-date">Agosto 2026</div><div><span style="color:var(--text)">Mariangela pagada</span></div><div class="cascade-amount">+$500/mes</div></div>
+    <div class="cascade-row"><div class="cascade-date">Agosto 2027</div><div><span style="color:var(--text)">Abogados pagados</span></div><div class="cascade-amount">+$860/mes</div></div>
+    <div class="cascade-row" style="font-weight:700"><div class="cascade-date">Ago 2027+</div><div style="color:var(--green)">Total liberado</div><div class="cascade-amount">+$1,360/mes</div></div>
+  </div>
+
+  <div class="sec-hdr">Próximas Acciones Urgentes</div>
+  <div class="card" id="urgentChecklist">
+    <div class="check-row"><div class="check-box" onclick="toggleCheck(this)"></div><span>Llamar a Carmax — saber estatus del balance</span></div>
+    <div class="check-row"><div class="check-box" onclick="toggleCheck(this)"></div><span>Llamar al IRS — configurar payment plan (irs.gov)</span></div>
+    <div class="check-row"><div class="check-box" onclick="toggleCheck(this)"></div><span>Llamar a AMEX — negociar settlement al 40-50%</span></div>
+    <div class="check-row"><div class="check-box" onclick="toggleCheck(this)"></div><span>Llamar a Wells Fargo colección — negociar settlement</span></div>
+    <div class="check-row"><div class="check-box" onclick="toggleCheck(this)"></div><span>Llamar a Maryland CCU — negociar settlement</span></div>
+    <div class="check-row"><div class="check-box" onclick="toggleCheck(this)"></div><span>Reunión de dinero esta semana con Blanmeli</span></div>
+    <div class="check-row"><div class="check-box" onclick="toggleCheck(this)"></div><span>Ir al supermercado con dos listas separadas — presupuesto $195/semana</span></div>
+  </div>
+
+  <div class="sec-hdr teal">Progreso Total de Deudas</div>
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+      <span style="font-size:0.85rem">Balance inicial: <strong>$57,175</strong></span>
+      <span style="font-size:0.85rem">Pagado: <strong id="totalPaidDisplay" style="color:var(--green)">$0</strong></span>
+    </div>
+    <div class="prog-wrap"><div class="prog-bar" id="totalDebtProgress" style="width:0%;background:var(--green)"></div></div>
+    <div style="font-size:0.75rem;color:var(--muted);margin-top:4px" id="totalDebtPct">0% completado</div>
+  </div>
+</div>
+
+<!-- ══ YNAB LIVE ══ -->
+<div id="ynab" class="panel">
+
+  <div class="ynab-connect" id="ynabConnectBox">
+    <div class="ynab-logo">YNAB</div>
+    <div class="ynab-sub">Conecta tu cuenta para ver datos en tiempo real.<br>Tu API key se guarda solo en memoria — nunca en la base de datos.</div>
+    <div class="form-group" style="text-align:left;max-width:400px;margin:0 auto 12px">
+      <label>Personal Access Token</label>
+      <input type="password" id="ynabToken" placeholder="Pega tu token aquí — YNAB → My Account → Developer Settings">
+    </div>
+    <button class="btn btn-primary" onclick="connectYNAB()"><span id="connectSpinner"></span>Conectar YNAB</button>
+    <div style="font-size:0.74rem;color:var(--muted);margin-top:10px">⚠️ No compartas tu token con nadie. No lo incluyas en GitHub.</div>
+  </div>
+
+  <div id="ynabContent" style="display:none">
+
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <div style="font-size:0.82rem;color:var(--green)">✅ Conectado a YNAB</div>
+      <button class="btn btn-ghost" style="font-size:0.75rem;padding:5px 12px" onclick="disconnectYNAB()">Desconectar</button>
+    </div>
+
+    <div class="sec-hdr">Presupuesto — Mes Actual</div>
+    <div id="budgetSelector" class="form-group">
+      <label>Selecciona tu presupuesto</label>
+      <select id="budgetSelect" onchange="loadBudgetData()">
+        <option value="">Cargando...</option>
+      </select>
+    </div>
+
+    <div id="ynabLoading" class="loading"><span class="spinner"></span>Cargando datos...</div>
+
+    <div id="ynabData" style="display:none">
+
+      <!-- SEMAPHORE CATEGORIES -->
+      <div class="sec-hdr">Semáforo de Categorías Clave</div>
+      <div class="card" id="semaphoreCards"></div>
+
+      <!-- ALL CATEGORIES -->
+      <div class="sec-hdr blue">Todas las Categorías del Mes</div>
+      <div class="card" id="allCategories"></div>
+
+      <!-- ACCOUNTS -->
+      <div class="sec-hdr gold">Cuentas y Balances</div>
+      <div class="card" id="accountsList"></div>
+
+      <div style="text-align:center;margin-top:10px">
+        <button class="btn btn-ghost" onclick="loadBudgetData()">↻ Actualizar datos</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ DEUDAS ══ -->
+<div id="deudas" class="panel">
+
+  <div class="sec-hdr">Registrar Pago de Deuda</div>
+  <div class="card">
+    <div class="form-group">
+      <label>Deuda</label>
+      <select id="debtSelect">
+        <option value="wells_fargo">Wells Fargo CC — Colección</option>
+        <option value="capital_one">Capital One CC — Current</option>
+        <option value="maryland_ccu">Maryland CCU — Colección</option>
+        <option value="irs">IRS — Pendiente</option>
+        <option value="amex">AMEX CC — Colección</option>
+        <option value="carmax">Carmax — Por definir</option>
+        <option value="mariangela">Mariangela (amiga)</option>
+        <option value="emily">Emily</option>
+        <option value="maria_camacho">Maria Camacho</option>
+        <option value="abogados">Abogados — Inmigración</option>
+        <option value="aca">Carro ACA</option>
+        <option value="mathias_medical">Mathias Medical</option>
+        <option value="blan_medical">Blan Medical</option>
+      </select>
+    </div>
+    <div class="two-col">
+      <div class="form-group">
+        <label>Monto pagado ($)</label>
+        <input type="number" id="paymentAmount" placeholder="860.00" min="1" step="0.01">
+      </div>
+      <div class="form-group">
+        <label>Fecha del pago</label>
+        <input type="date" id="paymentDate">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Tipo de pago</label>
+      <select id="paymentType">
+        <option value="regular">Pago regular</option>
+        <option value="settlement">Settlement negociado</option>
+        <option value="extra">Pago extra</option>
+        <option value="payoff">Pago total — ¡Deuda liquidada!</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Notas (opcional)</label>
+      <input type="text" id="paymentNote" placeholder="Ej: Settlement aceptado al 45%">
+    </div>
+    <div id="paymentStatus"></div>
+    <button class="btn btn-primary btn-full" onclick="savePayment()">💳 Registrar Pago</button>
+  </div>
+
+  <div class="sec-hdr">Historial de Deudas</div>
+  <div id="debtsList"><div class="loading"><span class="spinner"></span>Cargando...</div></div>
+</div>
+
+<!-- ══ REUNION ══ -->
+<div id="reunion" class="panel">
+
+  <div class="sec-hdr purple">Registrar Reunión Semanal</div>
+  <div class="card">
+    <div class="two-col">
+      <div class="form-group">
+        <label>Fecha de la reunión</label>
+        <input type="date" id="meetingDate">
+      </div>
+      <div class="form-group">
+        <label>Semana #</label>
+        <input type="number" id="meetingWeek" placeholder="1" min="1">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>¿Cumplieron el presupuesto de groceries esta semana?</label>
+      <select id="groceriesGoal">
+        <option value="yes">✅ Sí — dentro del presupuesto</option>
+        <option value="close">🟡 Casi — nos pasamos un poco</option>
+        <option value="no">❌ No — nos pasamos del presupuesto</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>¿Cumplieron el presupuesto de dining out?</label>
+      <select id="diningGoal">
+        <option value="yes">✅ Sí — dentro del presupuesto</option>
+        <option value="close">🟡 Casi — nos pasamos un poco</option>
+        <option value="no">❌ No — nos pasamos del presupuesto</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>¿Llamaron a alguna deuda en colección esta semana?</label>
+      <select id="debtCalls">
+        <option value="yes">✅ Sí</option>
+        <option value="no">❌ No</option>
+        <option value="na">N/A — ya están resueltas</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>Notas de la reunión</label>
+      <textarea id="meetingNotes" placeholder="¿Qué revisaron? ¿Qué surgió? ¿Qué decidieron?"></textarea>
+    </div>
+
+    <div class="form-group">
+      <label>Compromiso de Felipe esta semana</label>
+      <input type="text" id="commitFelipe" placeholder="Ej: No gastar en dining out sin avisar">
+    </div>
+
+    <div class="form-group">
+      <label>Compromiso de Blanmeli esta semana</label>
+      <input type="text" id="commitBlanmeli" placeholder="Ej: Actualizar YNAB cada día">
+    </div>
+
+    <div id="meetingStatus"></div>
+    <button class="btn btn-primary btn-full" onclick="saveMeeting()">📝 Guardar Reunión</button>
+  </div>
+
+  <div class="sec-hdr">Historial de Reuniones</div>
+  <div id="meetingsList"><div class="loading"><span class="spinner"></span>Cargando...</div></div>
+</div>
+
+<!-- ══ GROCERIES RETO ══ -->
+<div id="groceries" class="panel">
+
+  <div class="sec-hdr green">El Reto Progresivo — Money Mom Club</div>
+
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px">
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:11px;text-align:center">
+      <div style="font-family:'Oswald',sans-serif;font-size:1.2rem;font-weight:700;color:var(--gold)">$850</div>
+      <div style="font-size:0.68rem;color:var(--muted);margin-top:2px">Junio</div>
+    </div>
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:11px;text-align:center">
+      <div style="font-family:'Oswald',sans-serif;font-size:1.2rem;font-weight:700;color:var(--orange)">$750</div>
+      <div style="font-size:0.68rem;color:var(--muted);margin-top:2px">Julio</div>
+    </div>
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:11px;text-align:center">
+      <div style="font-family:'Oswald',sans-serif;font-size:1.2rem;font-weight:700;color:var(--green)">$680</div>
+      <div style="font-size:0.68rem;color:var(--muted);margin-top:2px">Agosto</div>
+    </div>
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:11px;text-align:center">
+      <div style="font-family:'Oswald',sans-serif;font-size:1.2rem;font-weight:700;color:var(--teal)">$600</div>
+      <div style="font-size:0.68rem;color:var(--muted);margin-top:2px">Sep+</div>
+    </div>
+  </div>
+
+  <div class="sec-hdr teal">Registrar Resultado Mensual</div>
+  <div class="card">
+    <div class="three-col">
+      <div class="form-group">
+        <label>Mes</label>
+        <select id="challengeMonth">
+          <option value="2026-06">Junio 2026</option>
+          <option value="2026-07">Julio 2026</option>
+          <option value="2026-08">Agosto 2026</option>
+          <option value="2026-09">Sep 2026</option>
+          <option value="2026-10">Oct 2026</option>
+          <option value="2026-11">Nov 2026</option>
+          <option value="2026-12">Dic 2026</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Gastado real ($)</label>
+        <input type="number" id="challengeSpent" placeholder="823.45" step="0.01">
+      </div>
+      <div class="form-group">
+        <label>Meta del mes ($)</label>
+        <input type="number" id="challengeTarget" placeholder="850">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Notas del mes</label>
+      <input type="text" id="challengeNotes" placeholder="Ej: Usamos el SHOP Method, compramos en Aldi">
+    </div>
+    <div id="challengeStatus"></div>
+    <button class="btn btn-primary btn-full" onclick="saveChallenge()">🛒 Registrar Resultado</button>
+  </div>
+
+  <div class="sec-hdr">Historial del Reto</div>
+  <div id="challengeHistory"><div class="loading"><span class="spinner"></span>Cargando...</div></div>
+
+  <div class="sec-hdr gold">Ahorro Acumulado vs Mayo</div>
+  <div class="card">
+    <div class="tally-row"><div class="tally-label">Gasto base (mayo 2026)</div><div class="tally-val" style="color:var(--accent)">$1,242</div></div>
+    <div class="tally-row"><div class="tally-label">Ahorro acumulado</div><div class="tally-val" style="color:var(--green)" id="totalGrocerySavings">$0</div></div>
+    <div class="tally-row"><div class="tally-label">Proyección anual si llegamos a $600</div><div class="tally-val" style="color:var(--teal)">$7,704</div></div>
+  </div>
+</div>
+
+<footer>
+  Dashboard diseñado por Dr. Mateo Rivera &nbsp;·&nbsp; Felipe Gil & Blanmeli Torrealba &nbsp;·&nbsp; 2026
+</footer>
+
+<script>
+// ── FIREBASE CONFIG ───────────────────────────────────────────────────────────
+const DB = 'https://dashboard-financiero-gt-default-rtdb.firebaseio.com';
+
+async function fbGet(path) {
+  try { const r = await fetch(`${DB}/${path}.json`); return r.ok ? r.json() : null; }
+  catch(e) { return null; }
+}
+async function fbPush(path, data) {
+  try {
+    const r = await fetch(`${DB}/${path}.json`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data) });
+    return r.ok ? r.json() : null;
+  } catch(e) { return null; }
+}
+async function fbDelete(path) {
+  try { const r = await fetch(`${DB}/${path}.json`, { method:'DELETE' }); return r.ok; }
+  catch(e) { return false; }
+}
+
+// ── YNAB CONFIG ───────────────────────────────────────────────────────────────
+const YNAB_BASE = 'https://api.ynab.com/v1';
+var ynabToken = null;
+var currentBudgetId = null;
+
+// Debt config
+const DEBT_CONFIG = {
+  wells_fargo:    { name: 'Wells Fargo CC',       original: 1714,  status: 'collection' },
+  capital_one:    { name: 'Capital One CC',        original: 1040,  status: 'current' },
+  maryland_ccu:   { name: 'Maryland CCU',          original: 2775,  status: 'collection' },
+  irs:            { name: 'IRS',                   original: 3509,  status: 'pending' },
+  amex:           { name: 'AMEX CC',               original: 6817,  status: 'collection' },
+  carmax:         { name: 'Carmax',                original: 0,     status: 'pending' },
+  mariangela:     { name: 'Mariangela (amiga)',     original: 1560,  status: 'current' },
+  emily:          { name: 'Emily',                  original: 750,   status: 'pending' },
+  maria_camacho:  { name: 'Maria Camacho',         original: 7000,  status: 'pending' },
+  abogados:       { name: 'Abogados — Inmigración', original: 12900, status: 'current' },
+  aca:            { name: 'Carro ACA',              original: 16810, status: 'current' },
+  mathias_medical:{ name: 'Mathias Medical',        original: 1600,  status: 'unsure' },
+  blan_medical:   { name: 'Blan Medical',           original: 700,   status: 'unsure' },
+};
+
+const GROCERY_TARGETS = { '2026-06':850,'2026-07':750,'2026-08':680,'2026-09':600,'2026-10':600,'2026-11':600,'2026-12':600 };
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+function fmt(n) { return '$' + Math.abs(n).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}); }
+function fmtDate(d) { if(!d) return '—'; const [y,m,day]=d.split('-'); const months=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']; return `${parseInt(day)} ${months[parseInt(m)-1]} ${y}`; }
+function today() { return new Date().toISOString().split('T')[0]; }
+function showStatus(id, type, msg) {
+  const el = document.getElementById(id);
+  if(!el) return;
+  el.innerHTML = `<div class="alert alert-${type}" style="margin:8px 0">${msg}</div>`;
+  setTimeout(()=>el.innerHTML='', 4000);
+}
+
+// ── CONFETTI ──────────────────────────────────────────────────────────────────
+function confetti() {
+  const colors = ['#4caf7d','#e8b84b','#45b8ac','#4a9eca','#e05252'];
+  for(let i=0; i<40; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti-piece';
+    el.style.left = Math.random()*100+'vw';
+    el.style.background = colors[Math.floor(Math.random()*colors.length)];
+    el.style.animationDuration = (1.5+Math.random()*2)+'s';
+    el.style.animationDelay = Math.random()*0.5+'s';
+    el.style.transform = `rotate(${Math.random()*360}deg)`;
+    document.body.appendChild(el);
+    setTimeout(()=>el.remove(), 4000);
+  }
+}
+
+// ── TAB NAV ───────────────────────────────────────────────────────────────────
+function showTab(id, el) {
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  el.classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+  if(id==='deudas')    loadDebts();
+  if(id==='reunion')   loadMeetings();
+  if(id==='groceries') loadChallenges();
+  if(id==='overview')  updateOverview();
+}
+
+// ── CHECKLIST ─────────────────────────────────────────────────────────────────
+function toggleCheck(el) {
+  el.classList.toggle('checked');
+  el.textContent = el.classList.contains('checked') ? '✓' : '';
+}
+
+// ── YNAB CONNECT ──────────────────────────────────────────────────────────────
+async function connectYNAB() {
+  const token = document.getElementById('ynabToken').value.trim();
+  if(!token) { alert('Pega tu Personal Access Token de YNAB'); return; }
+
+  const spinner = document.getElementById('connectSpinner');
+  spinner.innerHTML = '<span class="spinner"></span>';
+
+  try {
+    const r = await fetch(`${YNAB_BASE}/budgets`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if(!r.ok) throw new Error('Token inválido');
+    const data = await r.json();
+    ynabToken = token;
+
+    // Populate budget selector
+    const sel = document.getElementById('budgetSelect');
+    sel.innerHTML = '';
+    data.data.budgets.forEach(b => {
+      const opt = document.createElement('option');
+      opt.value = b.id;
+      opt.textContent = b.name;
+      sel.appendChild(opt);
+    });
+
+    document.getElementById('ynabConnectBox').style.display = 'none';
+    document.getElementById('ynabContent').style.display = 'block';
+    document.getElementById('connectionBadge').textContent = '🟢 YNAB conectado';
+    document.getElementById('connectionBadge').className = 'badge b-green';
+
+    if(data.data.budgets.length > 0) {
+      currentBudgetId = data.data.budgets[0].id;
+      loadBudgetData();
+    }
+  } catch(e) {
+    spinner.innerHTML = '';
+    alert('Error al conectar: ' + e.message + '. Verifica tu token en YNAB → My Account → Developer Settings');
+  }
+  spinner.innerHTML = '';
+}
+
+function disconnectYNAB() {
+  ynabToken = null; currentBudgetId = null;
+  document.getElementById('ynabConnectBox').style.display = 'block';
+  document.getElementById('ynabContent').style.display = 'none';
+  document.getElementById('ynabToken').value = '';
+  document.getElementById('connectionBadge').textContent = '⚪ YNAB desconectado';
+  document.getElementById('connectionBadge').className = 'badge b-blue';
+}
+
+async function loadBudgetData() {
+  const sel = document.getElementById('budgetSelect');
+  currentBudgetId = sel.value;
+  if(!currentBudgetId || !ynabToken) return;
+
+  document.getElementById('ynabLoading').style.display = 'block';
+  document.getElementById('ynabData').style.display = 'none';
+
+  try {
+    // Get current month
+    const now = new Date();
+    const month = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-01`;
+
+    const [monthRes, accountsRes] = await Promise.all([
+      fetch(`${YNAB_BASE}/budgets/${currentBudgetId}/months/${month}`, { headers:{'Authorization':`Bearer ${ynabToken}`} }),
+      fetch(`${YNAB_BASE}/budgets/${currentBudgetId}/accounts`, { headers:{'Authorization':`Bearer ${ynabToken}`} })
+    ]);
+
+    const monthData = await monthRes.json();
+    const accountsData = await accountsRes.json();
+
+    renderCategories(monthData.data.month.categories);
+    renderAccounts(accountsData.data.accounts);
+    updateOverviewFromYNAB(monthData.data.month);
+
+    document.getElementById('ynabLoading').style.display = 'none';
+    document.getElementById('ynabData').style.display = 'block';
+  } catch(e) {
+    document.getElementById('ynabLoading').innerHTML = '<div class="alert alert-warn">Error cargando datos. Intenta de nuevo.</div>';
+  }
+}
+
+function renderCategories(categories) {
+  // Key categories to highlight
+  const KEY_CATS = ['Groceries','Dining out','Rent','Auto loans','Car Insurance'];
+
+  // Semaphore
+  const semEl = document.getElementById('semaphoreCards');
+  semEl.innerHTML = '';
+  const keyCats = categories.filter(c => KEY_CATS.some(k => c.name.toLowerCase().includes(k.toLowerCase()) || c.name.includes(k)));
+
+  keyCats.forEach(cat => {
+    const budgeted = cat.budgeted / 1000;
+    const spent = Math.abs(cat.activity) / 1000;
+    const pct = budgeted > 0 ? (spent/budgeted)*100 : 0;
+    const color = pct < 70 ? 'green' : pct < 90 ? 'yellow' : 'red';
+    const barColor = pct < 70 ? 'var(--green)' : pct < 90 ? 'var(--gold)' : 'var(--accent)';
+
+    semEl.innerHTML += `
+      <div class="cat-row">
+        <div class="cat-header">
+          <div class="cat-name"><span class="semaphore sem-${color}"></span>${cat.name}</div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <div class="cat-amounts">${fmt(spent)} / ${fmt(budgeted)}</div>
+            <div class="cat-pct" style="color:${barColor}">${Math.round(pct)}%</div>
+          </div>
+        </div>
+        <div class="prog-wrap"><div class="prog-bar" style="width:${Math.min(pct,100)}%;background:${barColor}"></div></div>
+      </div>`;
+  });
+
+  // Update overview stats from YNAB
+  const groceryCat = categories.find(c => c.name.toLowerCase().includes('groceries') || c.name.includes('Groceries'));
+  const diningCat  = categories.find(c => c.name.toLowerCase().includes('dining') || c.name.includes('Dining'));
+  if(groceryCat) document.getElementById('ov-groceries').textContent = fmt(Math.abs(groceryCat.activity)/1000);
+  if(diningCat)  document.getElementById('ov-dining').textContent    = fmt(Math.abs(diningCat.activity)/1000);
+
+  // All categories
+  const allEl = document.getElementById('allCategories');
+  allEl.innerHTML = '';
+  const activeCats = categories.filter(c => c.budgeted !== 0 || c.activity !== 0);
+
+  activeCats.forEach(cat => {
+    const budgeted = cat.budgeted / 1000;
+    const spent = Math.abs(cat.activity) / 1000;
+    const pct = budgeted > 0 ? (spent/budgeted)*100 : 0;
+    const barColor = pct < 70 ? 'var(--green)' : pct < 90 ? 'var(--gold)' : 'var(--accent)';
+
+    allEl.innerHTML += `
+      <div class="cat-row">
+        <div class="cat-header">
+          <div class="cat-name" style="font-size:0.83rem">${cat.name}</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div class="cat-amounts" style="font-size:0.78rem">${fmt(spent)} / ${fmt(budgeted)}</div>
+          </div>
+        </div>
+        <div class="prog-wrap" style="height:6px"><div class="prog-bar" style="width:${Math.min(pct,100)}%;background:${barColor}"></div></div>
+      </div>`;
+  });
+}
+
+function renderAccounts(accounts) {
+  const el = document.getElementById('accountsList');
+  el.innerHTML = '';
+  accounts.filter(a => !a.deleted && !a.closed).forEach(acc => {
+    const bal = acc.balance / 1000;
+    const color = bal >= 0 ? 'var(--green)' : 'var(--accent)';
+    el.innerHTML += `
+      <div class="tally-row">
+        <div class="tally-label">${acc.name}</div>
+        <div class="tally-val" style="color:${color}">${fmt(bal)}</div>
+      </div>`;
+  });
+}
+
+function updateOverviewFromYNAB(month) {
+  const totalSpent = Math.abs(month.activity) / 1000;
+  const income = month.income / 1000;
+  document.getElementById('ov-spent').textContent = fmt(totalSpent);
+  if(income > 0) document.getElementById('ov-income').textContent = fmt(income);
+  const left = income - totalSpent;
+  const leftEl = document.getElementById('ov-left');
+  leftEl.textContent = fmt(Math.abs(left));
+  leftEl.style.color = left >= 0 ? 'var(--green)' : 'var(--accent)';
+}
+
+// ── PAYMENTS ──────────────────────────────────────────────────────────────────
+async function savePayment() {
+  const debtKey   = document.getElementById('debtSelect').value;
+  const amount    = parseFloat(document.getElementById('paymentAmount').value);
+  const date      = document.getElementById('paymentDate').value;
+  const type      = document.getElementById('paymentType').value;
+  const note      = document.getElementById('paymentNote').value.trim();
+
+  if(!amount || amount <= 0) return showStatus('paymentStatus','warn','Ingresa un monto válido.');
+  if(!date) return showStatus('paymentStatus','warn','Selecciona la fecha del pago.');
+
+  const data = { debtKey, amount, date, type, note, ts: Date.now() };
+  const result = await fbPush('debt_payments', data);
+
+  if(result) {
+    showStatus('paymentStatus','ok',`✅ Pago de ${fmt(amount)} registrado para ${DEBT_CONFIG[debtKey]?.name}`);
+    document.getElementById('paymentAmount').value = '';
+    document.getElementById('paymentNote').value = '';
+    if(type === 'payoff') confetti();
+    loadDebts();
+    updateOverview();
+  } else {
+    showStatus('paymentStatus','error','❌ Error al guardar. Verifica tu conexión.');
+  }
+}
+
+async function deletePayment(key) {
+  if(!confirm('¿Eliminar este pago?')) return;
+  await fbDelete(`debt_payments/${key}`);
+  loadDebts();
+  updateOverview();
+}
+
+async function loadDebts() {
+  const el = document.getElementById('debtsList');
+  el.innerHTML = '<div class="loading"><span class="spinner"></span>Cargando...</div>';
+
+  const raw = await fbGet('debt_payments');
+  const payments = raw ? Object.entries(raw).sort((a,b)=>b[1].ts-a[1].ts) : [];
+
+  // Group by debt
+  const byDebt = {};
+  payments.forEach(([key,p]) => {
+    if(!byDebt[p.debtKey]) byDebt[p.debtKey] = [];
+    byDebt[p.debtKey].push({key,...p});
+  });
+
+  // Calculate total paid
+  const totalPaid = payments.reduce((sum,[,p])=>sum+p.amount,0);
+  const pct = Math.min(100,(totalPaid/57175)*100);
+  document.getElementById('totalPaidDisplay').textContent = fmt(totalPaid);
+  document.getElementById('totalDebtProgress').style.width = pct+'%';
+  document.getElementById('totalDebtPct').textContent = pct.toFixed(1)+'% completado';
+  document.getElementById('ov-debt-paid').textContent = fmt(totalPaid);
+
+  if(Object.keys(byDebt).length === 0) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">💳</div><p>Sin pagos registrados aún.<br>Registra tu primer pago arriba.</p></div>`;
+    return;
+  }
+
+  el.innerHTML = '';
+
+  // Show all debts, with payments if any
+  Object.entries(DEBT_CONFIG).forEach(([dKey, cfg]) => {
+    const dPayments = byDebt[dKey] || [];
+    const totalPaidForDebt = dPayments.reduce((s,p)=>s+p.amount,0);
+    const remaining = Math.max(0, cfg.original - totalPaidForDebt);
+    const pct = cfg.original > 0 ? Math.min(100,(totalPaidForDebt/cfg.original)*100) : 0;
+    const isComplete = remaining === 0 && cfg.original > 0;
+
+    const statusClass = { collection:'ds-collection', current:'ds-current', pending:'ds-pending', unsure:'ds-pending' }[cfg.status] || 'ds-pending';
+    const statusLabel = { collection:'Colección', current:'Current', pending:'Pendiente', unsure:'Por definir' }[cfg.status] || '';
+    const barColor = isComplete ? 'var(--green)' : pct > 50 ? 'var(--teal)' : 'var(--blue)';
+
+    let paymentsHTML = '';
+    if(dPayments.length > 0) {
+      paymentsHTML = `<div class="debt-payments-log">`;
+      dPayments.slice(0,5).forEach(p => {
+        const typeLabel = {regular:'Regular',settlement:'Settlement',extra:'Extra',payoff:'🎉 Liquidada'}[p.type]||p.type;
+        paymentsHTML += `
+          <div class="payment-entry">
+            <div>
+              <div class="payment-date">${fmtDate(p.date)} · ${typeLabel}</div>
+              ${p.note ? `<div class="payment-note">"${p.note}"</div>` : ''}
+            </div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <div class="payment-amount">-${fmt(p.amount)}</div>
+              <button class="btn btn-danger" onclick="deletePayment('${p.key}')">✕</button>
+            </div>
+          </div>`;
+      });
+      if(dPayments.length > 5) paymentsHTML += `<div style="font-size:0.76rem;color:var(--muted);padding:4px 0">+${dPayments.length-5} pagos más</div>`;
+      paymentsHTML += `</div>`;
+    }
+
+    el.innerHTML += `
+      <div class="debt-card" ${isComplete ? 'style="border-color:rgba(76,175,125,0.4)"' : ''}>
+        <div class="debt-header">
+          <div>
+            <div class="debt-name">${isComplete ? '✅ ' : ''}${cfg.name}</div>
+            <div style="font-size:0.75rem;color:var(--muted);margin-top:2px">Original: ${cfg.original > 0 ? fmt(cfg.original) : 'Por definir'}</div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+            <span class="debt-status-badge ${isComplete ? 'ds-done' : statusClass}">${isComplete ? 'Liquidada' : statusLabel}</span>
+            <div class="debt-balance" style="color:${isComplete ? 'var(--green)' : 'var(--text)'}">
+              ${isComplete ? '¡Pagada!' : (remaining > 0 ? fmt(remaining) : '?')}
+            </div>
+          </div>
+        </div>
+        ${cfg.original > 0 ? `
+        <div class="prog-wrap">
+          <div class="prog-bar" style="width:${pct}%;background:${barColor}"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:0.73rem;color:var(--muted);margin-top:3px">
+          <span>Pagado: ${fmt(totalPaidForDebt)}</span>
+          <span>${pct.toFixed(0)}%</span>
+        </div>` : ''}
+        ${paymentsHTML}
+      </div>`;
+  });
+}
+
+// ── MEETINGS ──────────────────────────────────────────────────────────────────
+async function saveMeeting() {
+  const date        = document.getElementById('meetingDate').value;
+  const week        = document.getElementById('meetingWeek').value;
+  const groceries   = document.getElementById('groceriesGoal').value;
+  const dining      = document.getElementById('diningGoal').value;
+  const calls       = document.getElementById('debtCalls').value;
+  const notes       = document.getElementById('meetingNotes').value.trim();
+  const commitF     = document.getElementById('commitFelipe').value.trim();
+  const commitB     = document.getElementById('commitBlanmeli').value.trim();
+
+  if(!date) return showStatus('meetingStatus','warn','Selecciona la fecha de la reunión.');
+
+  const data = { date, week:parseInt(week)||0, groceries, dining, calls, notes, commitFelipe:commitF, commitBlanmeli:commitB, ts:Date.now() };
+  const result = await fbPush('weekly_meetings', data);
+
+  if(result) {
+    showStatus('meetingStatus','ok','✅ Reunión guardada exitosamente');
+    document.getElementById('meetingNotes').value = '';
+    document.getElementById('commitFelipe').value = '';
+    document.getElementById('commitBlanmeli').value = '';
+    loadMeetings();
+  } else {
+    showStatus('meetingStatus','error','❌ Error al guardar.');
+  }
+}
+
+async function deleteMeeting(key) {
+  if(!confirm('¿Eliminar esta reunión?')) return;
+  await fbDelete(`weekly_meetings/${key}`);
+  loadMeetings();
+}
+
+async function loadMeetings() {
+  const el = document.getElementById('meetingsList');
+  el.innerHTML = '<div class="loading"><span class="spinner"></span>Cargando...</div>';
+
+  const raw = await fbGet('weekly_meetings');
+  if(!raw) { el.innerHTML = `<div class="empty"><div class="empty-icon">👫</div><p>Sin reuniones registradas aún.</p></div>`; return; }
+
+  const meetings = Object.entries(raw).sort((a,b)=>b[1].ts-a[1].ts);
+  el.innerHTML = '';
+
+  meetings.forEach(([key,m]) => {
+    const gIcon  = {yes:'✅',close:'🟡',no:'❌'}[m.groceries]||'?';
+    const dIcon  = {yes:'✅',close:'🟡',no:'❌'}[m.dining]||'?';
+    const cIcon  = {yes:'✅',no:'❌',na:'N/A'}[m.calls]||'?';
+    const gClass = {yes:'mb-yes',close:'mb-yes',no:'mb-no'}[m.groceries]||'mb-no';
+    const dClass = {yes:'mb-yes',close:'mb-yes',no:'mb-no'}[m.dining]||'mb-no';
+
+    el.innerHTML += `
+      <div class="meeting-card">
+        <div class="meeting-header">
+          <div>
+            <div class="meeting-date">${fmtDate(m.date)} ${m.week ? `· Semana ${m.week}` : ''}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <div class="meeting-badges">
+              <span class="m-badge ${gClass}">${gIcon} Groceries</span>
+              <span class="m-badge ${dClass}">${dIcon} Dining</span>
+              <span class="m-badge ${m.calls==='yes'?'mb-yes':'mb-no'}">${cIcon} Llamadas</span>
+            </div>
+            <button class="btn btn-danger" onclick="deleteMeeting('${key}')">✕</button>
+          </div>
+        </div>
+        ${m.notes ? `<div class="meeting-notes">${m.notes}</div>` : ''}
+        ${m.commitFelipe ? `<div class="meeting-commit">Felipe: "${m.commitFelipe}"</div>` : ''}
+        ${m.commitBlanmeli ? `<div class="meeting-commit">Blanmeli: "${m.commitBlanmeli}"</div>` : ''}
+      </div>`;
+  });
+}
+
+// ── GROCERY CHALLENGE ─────────────────────────────────────────────────────────
+async function saveChallenge() {
+  const month  = document.getElementById('challengeMonth').value;
+  const spent  = parseFloat(document.getElementById('challengeSpent').value);
+  const target = parseFloat(document.getElementById('challengeTarget').value) || GROCERY_TARGETS[month] || 850;
+  const notes  = document.getElementById('challengeNotes').value.trim();
+
+  if(!spent || spent <= 0) return showStatus('challengeStatus','warn','Ingresa el gasto real del mes.');
+
+  const won = spent <= target;
+  const data = { month, spent, target, won, notes, ts:Date.now() };
+  const result = await fbPush('grocery_challenges', data);
+
+  if(result) {
+    const msg = won
+      ? `🎉 ¡Ganaron el reto de ${month}! Gastaron ${fmt(spent)} vs meta de ${fmt(target)}`
+      : `📊 Resultado registrado — Gastaron ${fmt(spent)} vs meta de ${fmt(target)}`;
+    showStatus('challengeStatus', won ? 'ok' : 'gold', msg);
+    if(won) confetti();
+    document.getElementById('challengeSpent').value = '';
+    document.getElementById('challengeNotes').value = '';
+    loadChallenges();
+  } else {
+    showStatus('challengeStatus','error','❌ Error al guardar.');
+  }
+}
+
+async function deleteChallenge(key) {
+  if(!confirm('¿Eliminar este resultado?')) return;
+  await fbDelete(`grocery_challenges/${key}`);
+  loadChallenges();
+}
+
+async function loadChallenges() {
+  const el = document.getElementById('challengeHistory');
+  el.innerHTML = '<div class="loading"><span class="spinner"></span>Cargando...</div>';
+
+  const raw = await fbGet('grocery_challenges');
+  if(!raw) { el.innerHTML = `<div class="empty"><div class="empty-icon">🛒</div><p>Sin resultados registrados aún.</p></div>`; return; }
+
+  const challenges = Object.entries(raw).sort((a,b)=>b[1].ts-a[1].ts);
+  el.innerHTML = '';
+
+  let totalSavings = 0;
+  challenges.forEach(([key,c]) => {
+    const savings = 1242 - c.spent;
+    totalSavings += Math.max(0,savings);
+    const pct = Math.min(100,(c.spent/c.target)*100);
+    const barColor = c.won ? 'var(--green)' : 'var(--accent)';
+    const [y,m] = c.month.split('-');
+    const monthName = ['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Sep','Oct','Nov','Dic'][parseInt(m)];
+
+    el.innerHTML += `
+      <div class="challenge-month">
+        <div class="challenge-header">
+          <div class="challenge-month-name">${monthName} ${y}</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span class="challenge-result ${c.won?'cr-win':'cr-lose'}">${c.won?'🏆 GANARON':'📊 Resultado'}</span>
+            <button class="btn btn-danger" onclick="deleteChallenge('${key}')">✕</button>
+          </div>
+        </div>
+        <div class="tally-row"><div class="tally-label">Meta</div><div class="tally-val" style="color:var(--muted)">${fmt(c.target)}</div></div>
+        <div class="tally-row"><div class="tally-label">Gastado real</div><div class="tally-val" style="color:${c.won?'var(--green)':'var(--accent)'}">${fmt(c.spent)}</div></div>
+        <div class="tally-row"><div class="tally-label">Vs mayo 2026</div><div class="tally-val" style="color:${savings>0?'var(--green)':'var(--accent)'}">${savings>0?'+':'-'}${fmt(Math.abs(savings))}</div></div>
+        <div class="prog-wrap" style="margin-top:8px"><div class="prog-bar" style="width:${pct}%;background:${barColor}"></div></div>
+        <div style="display:flex;justify-content:space-between;font-size:0.72rem;color:var(--muted);margin-top:3px">
+          <span>${pct.toFixed(0)}% del presupuesto usado</span>
+          ${c.won?`<span style="color:var(--green)">¡Bajo la meta!</span>`:`<span style="color:var(--accent)">Sobre la meta</span>`}
+        </div>
+        ${c.notes ? `<div style="font-size:0.8rem;color:var(--muted);margin-top:8px;font-style:italic">"${c.notes}"</div>` : ''}
+      </div>`;
+  });
+
+  document.getElementById('totalGrocerySavings').textContent = fmt(totalSavings);
+}
+
+// ── OVERVIEW UPDATE ───────────────────────────────────────────────────────────
+async function updateOverview() {
+  const raw = await fbGet('debt_payments');
+  const payments = raw ? Object.values(raw) : [];
+  const totalPaid = payments.reduce((s,p)=>s+p.amount,0);
+  const pct = Math.min(100,(totalPaid/57175)*100);
+  document.getElementById('totalPaidDisplay').textContent = fmt(totalPaid);
+  document.getElementById('totalDebtProgress').style.width = pct+'%';
+  document.getElementById('totalDebtPct').textContent = pct.toFixed(1)+'% completado';
+  document.getElementById('ov-debt-paid').textContent = fmt(totalPaid);
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+document.getElementById('paymentDate').value  = today();
+document.getElementById('meetingDate').value  = today();
+updateOverview();
+</script>
+</body>
+</html>
