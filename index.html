@@ -41,12 +41,12 @@
   /* TABS */
   .tab-bar { display: flex; overflow-x: auto; background: #111922; border-bottom: 1px solid var(--border); -webkit-overflow-scrolling: touch; scrollbar-width: none; position: sticky; top: 0; z-index: 100; }
   .tab-bar::-webkit-scrollbar { display: none; }
-  .tab { flex: 0 0 auto; padding: 12px 15px; font-family: 'Oswald', sans-serif; font-size: 0.76rem; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.18s; white-space: nowrap; user-select: none; }
+  .tab { flex: 0 0 auto; padding: 11px 13px; font-family: 'Oswald', sans-serif; font-size: 0.76rem; letter-spacing: 0.8px; text-transform: uppercase; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.18s; white-space: nowrap; user-select: none; }
   .tab:hover { color: var(--soft); }
   .tab.active { color: #fff; border-bottom-color: var(--accent); }
 
   /* PANELS */
-  .panel { display: none; padding: 18px 14px 48px; max-width: 780px; margin: 0 auto; }
+  .panel { display: none; padding: 18px 14px 48px; max-width: 780px; margin: 0 auto; width: 100%; }
   .panel.active { display: block; }
 
   /* SECTION HDR */
@@ -81,7 +81,47 @@
   textarea { resize: vertical; min-height: 72px; }
   .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
-  @media(max-width:480px) { .two-col, .three-col { grid-template-columns: 1fr; } }
+  .four-col-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:14px; }
+  /* ── MOBILE RESPONSIVE ── */
+  @media(max-width:600px) {
+    .four-col-grid { grid-template-columns: repeat(2,1fr); }
+    .panel { padding: 14px 12px 48px; }
+    header h1 { font-size: 1.2rem; letter-spacing: 1px; }
+    header p { font-size: 0.75rem; }
+    .tab { padding: 10px 11px; font-size: 0.7rem; letter-spacing: 0.5px; }
+    .stat-grid { grid-template-columns: repeat(2,1fr); gap: 7px; }
+    .two-col, .three-col { grid-template-columns: 1fr; }
+    .visit-tracker { grid-template-columns: repeat(2,1fr); gap: 8px; }
+    .micro-row { flex-wrap: wrap; gap: 6px; }
+    .micro-row .micro-bar-wrap { flex: 1 1 100%; order: 3; margin: 0; }
+    .micro-row .micro-name { flex: 1 1 auto; }
+    .micro-row .micro-amount { order: 2; }
+    .debt-header { flex-direction: column; gap: 8px; }
+    .debt-header > div:last-child { flex-direction: row; align-items: center; }
+    .cascade-row { flex-wrap: wrap; gap: 4px; }
+    .answer-row { flex-direction: column; gap: 8px; }
+    .answer-btn { padding: 14px; }
+    .decision-amount { font-size: 2.8rem; }
+    .meeting-header { flex-direction: column; gap: 8px; align-items: flex-start; }
+    .challenge-header { flex-direction: column; gap: 6px; align-items: flex-start; }
+    .payment-entry { flex-direction: column; gap: 6px; align-items: flex-start; }
+    .btn-full { font-size: 0.8rem; padding: 11px 16px; }
+    .checkin-pills { gap: 6px; }
+    .checkin-pill { font-size: 0.78rem; padding: 5px 11px; }
+    .streak-num { font-size: 3rem; }
+    .ynab-connect { padding: 16px 12px; }
+    .cascade-box { padding: 12px; }
+    .tally-row { flex-wrap: wrap; gap: 4px; }
+    .tally-label { flex: 1 1 140px; }
+  }
+  @media(max-width:380px) {
+    .four-col-grid { grid-template-columns: repeat(2,1fr); gap:6px; }
+    .stat-grid { grid-template-columns: 1fr 1fr; gap: 6px; }
+    .stat-val { font-size: 1.1rem; }
+    .visit-tracker { grid-template-columns: 1fr 1fr; }
+    .badges { gap: 5px; }
+    .badge { font-size: 0.63rem; padding: 2px 8px; }
+  }
 
   /* BUTTONS */
   .btn { font-family: 'Oswald', sans-serif; font-size: 0.84rem; letter-spacing: 1px; text-transform: uppercase; padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; transition: all 0.15s; display: inline-flex; align-items: center; gap: 6px; }
@@ -233,7 +273,7 @@
 
   .micro-tracker { background: var(--card); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin-bottom: 12px; }
   .micro-header { background: #1a2840; padding: 10px 14px; font-family: 'Oswald', sans-serif; font-size: 0.8rem; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; }
-  .micro-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-bottom: 1px solid rgba(255,255,255,0.04); }
+  .micro-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-bottom: 1px solid rgba(255,255,255,0.04); flex-wrap: wrap; gap: 4px; }
   .micro-row:last-child { border-bottom: none; }
   .micro-name { font-size: 0.87rem; color: var(--text); }
   .micro-amount { font-family: 'Oswald', sans-serif; font-size: 1rem; font-weight: 700; }
@@ -518,7 +558,7 @@
 
   <div class="sec-hdr green">El Reto Progresivo — Money Mom Club</div>
 
-  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px">
+  <div class="four-col-grid">
     <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:11px;text-align:center">
       <div style="font-family:'Oswald',sans-serif;font-size:1.2rem;font-weight:700;color:var(--gold)">$850</div>
       <div style="font-size:0.68rem;color:var(--muted);margin-top:2px">Junio</div>
@@ -620,7 +660,7 @@
 
   <!-- GROCERY RETO REMINDER -->
   <div class="sec-hdr green">Reto Progresivo de Groceries</div>
-  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px">
+  <div class="four-col-grid">
     <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:11px;text-align:center">
       <div style="font-family:'Oswald',sans-serif;font-size:1.2rem;font-weight:700;color:var(--gold)">$850</div>
       <div style="font-size:0.68rem;color:var(--muted);margin-top:2px">Junio</div>
