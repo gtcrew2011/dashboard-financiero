@@ -378,7 +378,10 @@
   .desp-cart-note { font-size:0.72rem; color:var(--muted); margin-top:1px; }
   .desp-cart-right { padding:6px 12px 6px 4px; display:flex; flex-direction:column; align-items:flex-end; gap:4px; min-width:120px; }
   .desp-inputs { display:flex; align-items:center; gap:3px; }
-  .desp-num { width:46px; background:var(--surface); border:1px solid var(--border); border-radius:6px; color:var(--text); font-family:'Inter',sans-serif; font-size:0.78rem; padding:3px 5px; text-align:right; outline:none; }
+  .desp-num { width:44px; background:var(--surface); border:1px solid var(--border); border-radius:6px; color:var(--text); font-family:'Inter',sans-serif; font-size:0.78rem; padding:3px 5px; text-align:right; outline:none; }
+  .desp-num-price { width:72px; background:var(--surface); border:1px solid var(--border); border-radius:6px; color:var(--text); font-family:'Inter',sans-serif; font-size:0.78rem; padding:3px 6px; text-align:right; outline:none; }
+  .desp-num-price:focus { border-color:var(--teal); }
+  .desp-num-price.calc { border-color:var(--gold); color:var(--gold); }
   .desp-num:focus { border-color:var(--teal); }
   .desp-unit-lbl { font-size:0.7rem; color:var(--muted); }
   .desp-line-total { font-family:'Oswald',sans-serif; font-size:0.82rem; font-weight:700; color:var(--gold); }
@@ -1881,7 +1884,7 @@ function renderDespCompras(){
               <div class="desp-inputs">
                 <input type="number" class="desp-num" value="${q}" step="0.5" min="0" oninput="updateDespQ('${item.id}',this.value)" title="Cantidad">
                 <span class="desp-unit-lbl">${item.unit} × $</span>
-                <input type="number" class="desp-num" value="${p.toFixed(2)}" step="0.01" min="0" oninput="updateDespP('${item.id}',this.value)" title="Precio">
+                <input type="text" class="desp-num-price" value="${p.toFixed(2)}" oninput="onPriceInput(this)" onblur="onPriceBlur('${item.id}',this)" onkeypress="onPriceKey(event,'${item.id}',this)" title="Precio · puedes escribir operaciones: 26.94/3" placeholder="0.00">
               </div>
               <div class="desp-line-total" id="dlt-${item.id}">= $${tot}</div>
             </div>
@@ -2009,7 +2012,7 @@ async function confirmPurchase(){
   if(!date){ showStatus('desp-status','warn','Selecciona la fecha de recibo'); return; }
   const btn=event.target; btn.disabled=true; btn.textContent='Guardando...';
   const needed=DESP_ITEMS.filter(i=>!despState.inStock[i.id]);
-  let saved=0;
+  let saved=0, failed=0, failedNames=[];
   for(const item of needed){
     const q=despQ(item); const p=despP(item); const s=despS(item); const total=q*p;
     const prev=despState.lastPurchase[item.id];
@@ -2020,22 +2023,31 @@ async function confirmPurchase(){
       cycleDays=prev.cycleDays?Math.round((prev.cycleDays+days)/2):days;
     }
     const record={date,qty:q,price:p,store:s,total,cycleDays,count,ts:Date.now()};
-    await fbSet(`grocery_last_purchase/${item.id}`,record);
-    await fbPush(`grocery_item_history/${item.id}`,{date,qty:q,price:p,store:s,total,ts:Date.now()});
-    despState.lastPurchase[item.id]=record;
-    saved++;
+    try {
+      const r1 = await fbSet(`grocery_last_purchase/${item.id}`,record);
+      const r2 = await fbPush(`grocery_item_history/${item.id}`,{date,qty:q,price:p,store:s,total,ts:Date.now()});
+      if(r1 && r2){ despState.lastPurchase[item.id]=record; saved++; }
+      else { failed++; failedNames.push(item.name); }
+    } catch(e){ failed++; failedNames.push(item.name); }
   }
   for(const f of despState.flex.filter(x=>!x.inStock)){
-    await fbPush('grocery_flex_history',{name:f.name,date,qty:f.qty,unit:f.unit,price:f.price,store:f.store,total:f.qty*f.price,ts:Date.now()});
-    saved++;
+    try {
+      const r = await fbPush('grocery_flex_history',{name:f.name,date,qty:f.qty,unit:f.unit,price:f.price,store:f.store,total:f.qty*f.price,ts:Date.now()});
+      if(r) saved++; else { failed++; failedNames.push(f.name); }
+    } catch(e){ failed++; failedNames.push(f.name); }
   }
-  despState.inCart={}; despState.inStock={}; despState.flex=[];
-  document.getElementById('desp-week').value='';
-  document.getElementById('desp-notes').value='';
-  showStatus('desp-status','ok',`✅ ${saved} ítems registrados — ${fmtDate(date)}`);
-  confetti();
   btn.disabled=false; btn.textContent='📦 Registrar compra — guardar historial';
-  renderDespInv(); renderDespCompras();
+  if(failed===0){
+    despState.inCart={}; despState.inStock={}; despState.flex=[];
+    document.getElementById('desp-notes').value='';
+    showStatus('desp-status','ok',`✅ ${saved} ítems guardados en Firebase — ${fmtDate(date)}`);
+    confetti();
+    renderDespInv(); renderDespCompras();
+  } else if(saved>0){
+    showStatus('desp-status','gold',`⚠️ ${saved} guardados, ${failed} fallaron: ${failedNames.join(', ')}. Intenta de nuevo.`);
+  } else {
+    showStatus('desp-status','warn',`❌ Error de conexión con Firebase. Verifica tu internet e intenta de nuevo. (${failedNames.slice(0,3).join(', ')}...)`);
+  }
 }
 
 
@@ -2150,6 +2162,32 @@ async function loadDespHistorial(){
 function toggleHistWeek(id){
   const el=document.getElementById(id);
   if(el) el.classList.toggle('open');
+}
+
+
+function evalMath(val){
+  const clean = String(val).replace(/[^0-9+\-*/.()\s]/g,'').trim();
+  if(!clean) return 0;
+  try {
+    const result = Function('"use strict"; return ('+clean+')')();
+    return isFinite(result) ? Math.round(result*100)/100 : 0;
+  } catch(e){ return parseFloat(val)||0; }
+}
+
+function onPriceInput(el){
+  const hasOp = /[+\-*/]/.test(el.value);
+  el.classList.toggle('calc', hasOp);
+}
+
+function onPriceBlur(id, el){
+  const result = evalMath(el.value);
+  el.value = result.toFixed(2);
+  el.classList.remove('calc');
+  updateDespP(id, result);
+}
+
+function onPriceKey(e, id, el){
+  if(e.key==='Enter'){ e.preventDefault(); onPriceBlur(id, el); el.blur(); }
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
