@@ -308,9 +308,34 @@
   .hp-ok   { background: rgba(232,184,75,0.15); color: #f5d98a; }
   .hp-bad  { background: rgba(224,82,82,0.12); color: #f0a8a8; }
 
+
+  .hist-week { background:var(--card); border:1px solid var(--border); border-radius:10px; margin-bottom:10px; overflow:hidden; }
+  .hist-week-hdr { display:flex; justify-content:space-between; align-items:center; padding:12px 14px; cursor:pointer; transition:background 0.15s; }
+  .hist-week-hdr:hover { background:rgba(255,255,255,0.03); }
+  .hist-week-label { font-family:'Oswald',sans-serif; font-size:0.88rem; color:var(--soft); letter-spacing:0.5px; }
+  .hist-week-total { font-family:'Oswald',sans-serif; font-size:1.1rem; font-weight:700; }
+  .hist-week-total.ok  { color:var(--green); }
+  .hist-week-total.over{ color:var(--accent); }
+  .hist-week-body { display:none; border-top:1px solid var(--border); padding:10px 14px; }
+  .hist-week-body.open { display:block; }
+  .hist-store-hdr { font-size:0.75rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:0.06em; margin:10px 0 5px; }
+  .hist-store-hdr:first-child { margin-top:0; }
+  .hist-item-row { display:flex; justify-content:space-between; align-items:center; padding:4px 0; border-bottom:1px solid rgba(255,255,255,0.03); font-size:0.82rem; }
+  .hist-item-row:last-child { border-bottom:none; }
+  .hist-item-name { color:var(--text); flex:1; }
+  .hist-item-detail { color:var(--muted); font-size:0.75rem; margin:0 10px; white-space:nowrap; }
+  .hist-item-total { color:var(--gold); font-family:'Oswald',sans-serif; font-size:0.85rem; font-weight:700; white-space:nowrap; }
+  .hist-store-sub { display:flex; justify-content:space-between; align-items:center; padding:6px 0 2px; border-top:1px solid rgba(255,255,255,0.06); margin-top:4px; }
+  .hist-store-sub span { font-size:0.78rem; color:var(--teal); font-weight:600; }
+  .hist-summary-row { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; padding-top:10px; border-top:1px solid var(--border); }
+  .hist-store-pill { font-size:0.72rem; font-weight:600; padding:3px 10px; border-radius:20px; color:#fff; }
+  .hist-avg { background:rgba(255,255,255,0.04); border:1px solid var(--border); border-radius:8px; padding:10px 14px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; }
+  .hist-avg-label { font-size:0.78rem; color:var(--muted); }
+  .hist-avg-val { font-family:'Oswald',sans-serif; font-size:1rem; font-weight:700; color:var(--teal); }
+
   /* ── DESPENSA TAB ─────────────────────────────────────────────────────── */
-  .desp-subtabs { display:grid; grid-template-columns:1fr 1fr; background:var(--surface); border-radius:8px; padding:3px; gap:3px; margin-bottom:14px; }
-  .desp-stab { padding:9px 8px; font-family:'Oswald',sans-serif; font-size:0.78rem; letter-spacing:0.8px; text-transform:uppercase; color:var(--muted); cursor:pointer; border-radius:6px; text-align:center; transition:all 0.15s; }
+  .desp-subtabs { display:grid; grid-template-columns:1fr 1fr 1fr; background:var(--surface); border-radius:8px; padding:3px; gap:3px; margin-bottom:14px; }
+  .desp-stab { padding:9px 6px; font-family:'Oswald',sans-serif; font-size:0.75rem; letter-spacing:0.5px; text-transform:uppercase; color:var(--muted); cursor:pointer; border-radius:6px; text-align:center; transition:all 0.15s; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .desp-stab.active { background:var(--card); color:#fff; }
   .desp-panel { display:none; }
   .desp-panel.active { display:block; }
@@ -908,6 +933,7 @@
   <div class="desp-subtabs">
     <div class="desp-stab active" onclick="showDespTab('inventario',this)">📦 Inventario</div>
     <div class="desp-stab" onclick="showDespTab('compras',this)">🛒 Lista de compras</div>
+    <div class="desp-stab" onclick="showDespTab('historial',this)">📊 Historial</div>
   </div>
 
   <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
@@ -969,6 +995,13 @@
       <div id="desp-status"></div>
       <button class="btn btn-success btn-full" onclick="confirmPurchase()">📦 Registrar compra — guardar historial</button>
     </div>
+  </div>
+
+
+  <!-- HISTORIAL -->
+  <div id="desp-historial" class="desp-panel">
+    <div class="sec-hdr green">Historial de compras — semana a semana</div>
+    <div id="desp-hist-list"><div class="loading"><span class="spinner"></span>Cargando historial...</div></div>
   </div>
 
 </div>
@@ -1645,7 +1678,7 @@ const DESP_ITEMS = [
   {id:"d1",name:"Aceite de oliva",note:"~1 L · amortizado 3–4 sem",cat:"Despensa",qty:1,unit:"u",price:7.00,store:"ALDI"},
   {id:"d2",name:"Leche de avena/almendra",note:"half-gallon",cat:"Despensa",qty:1,unit:"u",price:3.50,store:"Walmart"},
   {id:"d3",name:"Tahini",note:"amortizado 6–8 semanas",cat:"Despensa",qty:1,unit:"u",price:3.00,store:"Walmart"},
-  {id:"d4",name:"Semillas de chía",note:"amortizado 4–6 semanas",cat:"Despensa",qty:1,unit:"u",price:10.74,store:"Walmart"},
+  {id:"d4",name:"Semillas de chía",note:"paquete 32 oz · amortizado 4–6 semanas",cat:"Despensa",qty:1,unit:"u",price:10.74,store:"Walmart"},
   {id:"d5",name:"Caldo de pollo bajo sodio",note:"2 cajas",cat:"Despensa",qty:2,unit:"u",price:1.50,store:"ALDI"},
   {id:"v1",name:"Zucchini",note:"batch cooking",cat:"Vegetales",qty:2,unit:"lb",price:1.99,store:"Sunfresh"},
   {id:"v2",name:"Zanahorias sueltas",note:"batch cooking",cat:"Vegetales",qty:2,unit:"lb",price:0.99,store:"Sunfresh"},
@@ -1721,6 +1754,7 @@ function showDespTab(tab, el){
   if(el) el.classList.add('active');
   document.getElementById('desp-'+tab).classList.add('active');
   if(tab==='compras') renderDespCompras();
+  if(tab==='historial') loadDespHistorial();
 }
 
 function renderDespInv(){
@@ -2002,6 +2036,100 @@ async function confirmPurchase(){
   confetti();
   btn.disabled=false; btn.textContent='📦 Registrar compra — guardar historial';
   renderDespInv(); renderDespCompras();
+}
+
+
+// ── HISTORIAL DESPENSA ────────────────────────────────────────────────────────
+
+function weekRangeFromDate(dateStr){
+  const d = new Date(dateStr + 'T12:00:00');
+  const day = d.getDay();
+  const diff = day===0 ? -6 : 1-day;
+  const mon = new Date(d); mon.setDate(d.getDate()+diff);
+  const sun = new Date(mon); sun.setDate(mon.getDate()+6);
+  return { mon, sun, label: formatWeekLabel(mon), key: mon.toISOString().split('T')[0] };
+}
+
+async function loadDespHistorial(){
+  const el = document.getElementById('desp-hist-list');
+  el.innerHTML = '<div class="loading"><span class="spinner"></span>Cargando...</div>';
+  const [fixedRaw, flexRaw] = await Promise.all([
+    fbGet('grocery_item_history'),
+    fbGet('grocery_flex_history')
+  ]);
+  const weeks = {};
+  if(fixedRaw){
+    Object.entries(fixedRaw).forEach(([itemId, purchases])=>{
+      const itemDef = DESP_ITEMS.find(i=>i.id===itemId);
+      const name = itemDef ? itemDef.name : itemId;
+      const unit = itemDef ? itemDef.unit : 'u';
+      Object.values(purchases).forEach(p=>{
+        if(!p.date) return;
+        const wk = weekRangeFromDate(p.date);
+        if(!weeks[wk.key]) weeks[wk.key]={label:wk.label,items:[],flexItems:[]};
+        weeks[wk.key].items.push({name,qty:p.qty||0,unit,price:p.price||0,store:p.store||'',total:p.total||0});
+      });
+    });
+  }
+  if(flexRaw){
+    Object.values(flexRaw).forEach(p=>{
+      if(!p.date) return;
+      const wk = weekRangeFromDate(p.date);
+      if(!weeks[wk.key]) weeks[wk.key]={label:wk.label,items:[],flexItems:[]};
+      weeks[wk.key].flexItems.push({name:p.name||'',qty:p.qty||0,unit:p.unit||'u',price:p.price||0,store:p.store||'',total:p.total||0});
+    });
+  }
+  if(!Object.keys(weeks).length){
+    el.innerHTML='<div class="empty-desp">Sin historial todavía — registra tu primera compra</div>';
+    return;
+  }
+  const sorted = Object.entries(weeks).sort((a,b)=>b[0].localeCompare(a[0]));
+  const totals = sorted.map(([,w])=>[...w.items,...w.flexItems].reduce((s,i)=>s+i.total,0)).filter(t=>t>0);
+  const avg = totals.length ? totals.reduce((a,b)=>a+b,0)/totals.length : 0;
+  let html = '';
+  if(totals.length>1){
+    html+=`<div class="hist-avg"><div class="hist-avg-label">Promedio semanal (${totals.length} semanas)</div><div class="hist-avg-val">${fmt(avg)}</div></div>`;
+  }
+  sorted.forEach(([key,wk],idx)=>{
+    const allItems=[...wk.items,...wk.flexItems];
+    const weekTotal=allItems.reduce((s,i)=>s+i.total,0);
+    const isOver=weekTotal>190;
+    const byStore={};
+    wk.items.forEach(i=>{ if(!byStore[i.store]) byStore[i.store]=[]; byStore[i.store].push(i); });
+    let pillsHtml=Object.entries(byStore).map(([store,items])=>{
+      const st=items.reduce((s,i)=>s+i.total,0);
+      return `<span class="hist-store-pill" style="background:${DSC[store]||'#555'}">${store} ${fmt(st)}</span>`;
+    }).join('');
+    if(wk.flexItems.length){
+      const ft=wk.flexItems.reduce((s,i)=>s+i.total,0);
+      pillsHtml+=`<span class="hist-store-pill" style="background:var(--teal)">Flex ${fmt(ft)}</span>`;
+    }
+    let detailHtml='';
+    Object.entries(byStore).forEach(([store,items])=>{
+      const st=items.reduce((s,i)=>s+i.total,0);
+      detailHtml+=`<div class="hist-store-hdr">${store}</div>`;
+      items.forEach(i=>{
+        const detail=i.unit==='lb'?`${i.qty}lb x $${parseFloat(i.price).toFixed(2)}/lb`:i.qty>1?`${i.qty} x $${parseFloat(i.price).toFixed(2)}`:`$${parseFloat(i.price).toFixed(2)}`;
+        detailHtml+=`<div class="hist-item-row"><span class="hist-item-name">${i.name}</span><span class="hist-item-detail">${detail}</span><span class="hist-item-total">${fmt(i.total)}</span></div>`;
+      });
+      detailHtml+=`<div class="hist-store-sub"><span>Subtotal ${store}</span><span>${fmt(st)}</span></div>`;
+    });
+    if(wk.flexItems.length){
+      const ft=wk.flexItems.reduce((s,i)=>s+i.total,0);
+      detailHtml+=`<div class="hist-store-hdr">Flex semanal</div>`;
+      wk.flexItems.forEach(i=>{
+        detailHtml+=`<div class="hist-item-row"><span class="hist-item-name">${i.name}</span><span class="hist-item-detail">${i.qty} ${i.unit} · ${i.store}</span><span class="hist-item-total">${fmt(i.total)}</span></div>`;
+      });
+      detailHtml+=`<div class="hist-store-sub"><span>Subtotal Flex</span><span>${fmt(ft)}</span></div>`;
+    }
+    html+=`<div class="hist-week"><div class="hist-week-hdr" onclick="toggleHistWeek('hw${idx}')"><div><div class="hist-week-label">${wk.label}</div><div class="hist-summary-row" style="margin-top:6px;padding:0;border:none">${pillsHtml}</div></div><div class="hist-week-total ${isOver?'over':'ok'}">${fmt(weekTotal)}</div></div><div class="hist-week-body${idx===0?' open':''}" id="hw${idx}">${detailHtml}</div></div>`;
+  });
+  el.innerHTML=html;
+}
+
+function toggleHistWeek(id){
+  const el=document.getElementById(id);
+  if(el) el.classList.toggle('open');
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
