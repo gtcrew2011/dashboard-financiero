@@ -1792,52 +1792,34 @@ function showDespTab(tab, el){
 
 function renderDespInv(){
   try {
-  const cats=[...new Set(DESP_ITEMS.map(i=>i.cat))];
+  // Merge DESP_ITEMS and customItems into shared categories
+  const allInvItems = [...DESP_ITEMS, ...customItems];
+  const cats = [...new Set(allInvItems.map(i=>i.cat))];
   let html='';
   cats.forEach(cat=>{
+    const catItems = allInvItems.filter(i=>i.cat===cat);
     html+=`<div class="sec-hdr" style="margin-top:10px">${cat}</div>`;
-    DESP_ITEMS.filter(i=>i.cat===cat).forEach(item=>{
+    catItems.forEach(item=>{
+      const isCustom = !!customItems.find(c=>c.id===item.id);
       const stocked=!!despState.inStock[item.id];
       const s=despS(item);
       html+=`<div class="desp-item${stocked?' stocked':''}">
         <div class="desp-item-inner">
           <div class="desp-chk"><input type="checkbox" ${stocked?'checked':''} onchange="toggleDespStock('${item.id}',this.checked)"></div>
           <div class="desp-body">
-            <div class="desp-name${stocked?' done':''}">${item.name}</div>
+            <div class="desp-name${stocked?' done':''}">${item.name}${isCustom?'<span class="custom-badge">FIJO</span>':''}</div>
             <div class="desp-note">${item.note||''}${item.note?' · ':''}${item.qty} ${item.unit}</div>
           </div>
           <div class="desp-right">
             <span class="store-tag" style="background:${DSC[s]}" onclick="cycleDespStore('${item.id}')">${s}</span>
             <input type="text" class="desp-num-price" style="margin-top:3px;width:80px" value="${despP(item).toFixed(2)}" oninput="onPriceInput(this)" onblur="onInvPriceBlur('${item.id}',this)" onkeypress="onPriceKey(event,'${item.id}',this)" title="${item.unit==='lb'?'Precio/lb · acepta operaciones: ej 22.21/5':'Precio/u · acepta operaciones'}">
             ${lastBuyHtml(item.id)}
+            ${isCustom?`<button class="desp-del-btn" onclick="deleteCustomItem('${item.id}','${item.name.replace(/'/g,"\'")}')">✕ quitar de fijo</button>`:''}
           </div>
         </div>
       </div>`;
     });
   });
-  // Custom items
-  if(customItems.length){
-    html+=`<div class="sec-hdr" style="margin-top:10px;border-left-color:var(--purple)">Mis ítems fijos</div>`;
-    customItems.forEach(item=>{
-      const stocked=!!despState.inStock[item.id];
-      const s=despS(item);
-      html+=`<div class="desp-item${stocked?' stocked':''}">
-        <div class="desp-item-inner">
-          <div class="desp-chk"><input type="checkbox" ${stocked?'checked':''} onchange="toggleDespStock('${item.id}',this.checked)"></div>
-          <div class="desp-body">
-            <div class="desp-name${stocked?' done':''}">${item.name}<span class="custom-badge">FIJO</span></div>
-            <div class="desp-note">${item.note||''}${item.note?' · ':''}${item.qty} ${item.unit}</div>
-          </div>
-          <div class="desp-right">
-            <span class="store-tag" style="background:${DSC[s]}" onclick="cycleDespStore('${item.id}')">${s}</span>
-            <input type="text" class="desp-num-price" style="margin-top:3px;width:80px" value="${despP(item).toFixed(2)}" oninput="onPriceInput(this)" onblur="onInvPriceBlur('${item.id}',this)" onkeypress="onPriceKey(event,'${item.id}',this)" title="Precio/unidad · acepta operaciones">
-            ${lastBuyHtml(item.id)}
-            <button class="desp-del-btn" onclick="deleteCustomItem('${item.id}','${item.name.replace(/'/g,"\'")}')">✕ quitar de fijo</button>
-          </div>
-        </div>
-      </div>`;
-    });
-  }
   document.getElementById('desp-inv-list').innerHTML=html;
   const stocked=[...DESP_ITEMS,...customItems].filter(i=>despState.inStock[i.id]).length;
   document.getElementById('desp-stocked').textContent=stocked;
