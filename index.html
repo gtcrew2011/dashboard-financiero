@@ -1043,7 +1043,7 @@ function showTab(id, el) {
   if(id==='presupuesto') renderBudgetTemplate();
   if(id==='checkin')     { loadCheckinHistory(); updateStreak(); loadVisitTracker(); if(typeof visitHistoryOpen!=='undefined'&&visitHistoryOpen) loadVisitHistory(); }
   if(id==='antes')       { updateDecision(); resetDecisionTest(); }
-  if(id==='despensa')   loadDespensa();
+  if(id==='despensa')   { despState.despLoaded=false; loadDespensa(); }
 }
 
 // ── FIREBASE CONFIG ───────────────────────────────────────────────────────────
@@ -1770,11 +1770,13 @@ function showDespTab(tab, el){
   document.querySelectorAll('.desp-panel').forEach(p=>p.classList.remove('active'));
   if(el) el.classList.add('active');
   document.getElementById('desp-'+tab).classList.add('active');
+  if(tab==='inventario') renderDespInv();
   if(tab==='compras') renderDespCompras();
   if(tab==='historial') loadDespHistorial();
 }
 
 function renderDespInv(){
+  try {
   const cats=[...new Set(DESP_ITEMS.map(i=>i.cat))];
   let html='';
   cats.forEach(cat=>{
@@ -1825,6 +1827,10 @@ function renderDespInv(){
   const stocked=[...DESP_ITEMS,...customItems].filter(i=>despState.inStock[i.id]).length;
   document.getElementById('desp-stocked').textContent=stocked;
   document.getElementById('desp-total').textContent=DESP_ITEMS.length+customItems.length;
+  } catch(e) {
+    console.error('renderDespInv error:', e);
+    document.getElementById('desp-inv-list').innerHTML=`<div class="alert alert-warn"><span class="alert-icon">⚠️</span>Error al cargar inventario: ${e.message}. <button class="btn btn-ghost" onclick="despState.despLoaded=false;loadDespensa()">Reintentar</button></div>`;
+  }
   renderFlexInv();
 }
 
