@@ -333,6 +333,19 @@
   .hist-avg-label { font-size:0.78rem; color:var(--muted); }
   .hist-avg-val { font-family:'Oswald',sans-serif; font-size:1rem; font-weight:700; color:var(--teal); }
 
+
+  .desp-pin-btn { background:none; border:1px solid var(--border); border-radius:6px; color:var(--gold); font-size:0.7rem; padding:2px 7px; cursor:pointer; white-space:nowrap; transition:all 0.15s; }
+  .desp-pin-btn:hover { background:rgba(232,184,75,0.1); border-color:var(--gold); }
+  .desp-del-btn { background:none; border:none; color:var(--muted); font-size:0.72rem; cursor:pointer; padding:2px 5px; }
+  .desp-del-btn:hover { color:var(--accent); }
+  .custom-badge { font-size:0.62rem; font-weight:700; padding:1px 6px; border-radius:20px; background:rgba(155,114,207,0.2); color:#c4a8f0; margin-left:5px; vertical-align:middle; }
+  .pin-modal-overlay { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:9999; display:flex; align-items:center; justify-content:center; padding:16px; }
+  .pin-modal { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:18px; width:100%; max-width:360px; }
+  .pin-modal h3 { font-family:'Oswald',sans-serif; font-size:1rem; color:#fff; margin-bottom:14px; letter-spacing:0.5px; }
+  .pin-modal .form-group { margin-bottom:10px; }
+  .pin-modal .two-col { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .pin-modal-btns { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:14px; }
+
   /* ── DESPENSA TAB ─────────────────────────────────────────────────────── */
   .desp-subtabs { display:grid; grid-template-columns:1fr 1fr 1fr; background:var(--surface); border-radius:8px; padding:3px; gap:3px; margin-bottom:14px; }
   .desp-stab { padding:9px 6px; font-family:'Oswald',sans-serif; font-size:0.75rem; letter-spacing:0.5px; text-transform:uppercase; color:var(--muted); cursor:pointer; border-radius:6px; text-align:center; transition:all 0.15s; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -1744,6 +1757,7 @@ async function loadDespensa(){
   if(!despState.despLoaded){
     const raw = await fbGet('grocery_last_purchase');
     if(raw) Object.entries(raw).forEach(([id,d])=>{ despState.lastPurchase[id]=d; });
+    await loadCustomItems();
     despState.despLoaded = true;
   }
   initDespWeek();
@@ -1783,10 +1797,32 @@ function renderDespInv(){
       </div>`;
     });
   });
+  // Custom items
+  if(customItems.length){
+    html+=`<div class="sec-hdr" style="margin-top:10px;border-left-color:var(--purple)">Mis ítems fijos</div>`;
+    customItems.forEach(item=>{
+      const stocked=!!despState.inStock[item.id];
+      const s=despS(item);
+      html+=`<div class="desp-item${stocked?' stocked':''}">
+        <div class="desp-item-inner">
+          <div class="desp-chk"><input type="checkbox" ${stocked?'checked':''} onchange="toggleDespStock('${item.id}',this.checked)"></div>
+          <div class="desp-body">
+            <div class="desp-name${stocked?' done':''}">${item.name}<span class="custom-badge">FIJO</span></div>
+            <div class="desp-note">${item.note||''}${item.note?' · ':''}${item.qty} ${item.unit}</div>
+          </div>
+          <div class="desp-right">
+            <span class="store-tag" style="background:${DSC[s]}" onclick="cycleDespStore('${item.id}')">${s}</span>
+            ${lastBuyHtml(item.id)}
+            <button class="desp-del-btn" onclick="deleteCustomItem('${item.id}','${item.name.replace(/'/g,"\'")}')">✕ quitar de fijo</button>
+          </div>
+        </div>
+      </div>`;
+    });
+  }
   document.getElementById('desp-inv-list').innerHTML=html;
-  const stocked=DESP_ITEMS.filter(i=>despState.inStock[i.id]).length;
+  const stocked=[...DESP_ITEMS,...customItems].filter(i=>despState.inStock[i.id]).length;
   document.getElementById('desp-stocked').textContent=stocked;
-  document.getElementById('desp-total').textContent=DESP_ITEMS.length;
+  document.getElementById('desp-total').textContent=DESP_ITEMS.length+customItems.length;
   renderFlexInv();
 }
 
@@ -1802,6 +1838,7 @@ function renderFlexInv(){
         <div class="desp-body"><div class="desp-name${stocked?' done':''}">${f.name}</div><div class="desp-note">${f.qty} ${f.unit} · $${parseFloat(f.price).toFixed(2)}/u</div></div>
         <div class="desp-right">
           <span class="store-tag" style="background:${DSC[f.store]||'#666'}">${f.store}</span>
+          <button class="desp-pin-btn" onclick="showPinModal(${i})">📌 Fijar</button>
           <button onclick="removeFlexItem(${i})" style="background:none;border:none;color:var(--muted);font-size:0.75rem;cursor:pointer;padding:0">✕ quitar</button>
         </div>
       </div>
@@ -1854,7 +1891,7 @@ function removeFlexItem(i){
 }
 
 function renderDespCompras(){
-  const needed=DESP_ITEMS.filter(i=>!despState.inStock[i.id]);
+  const needed=[...DESP_ITEMS,...customItems].filter(i=>!despState.inStock[i.id]);
   const flexNeeded=despState.flex.filter(f=>!f.inStock);
   const byStore={};
   needed.forEach(item=>{
@@ -1935,7 +1972,7 @@ function updateDespQ(id,val){
   const item=DESP_ITEMS.find(i=>i.id===id);
   const el=document.getElementById('dlt-'+id);
   if(el) el.textContent='= $'+(despTotal(item)).toFixed(2);
-  recalcDesp(DESP_ITEMS.filter(i=>!despState.inStock[i.id]),despState.flex.filter(f=>!f.inStock));
+  recalcDesp([...DESP_ITEMS,...customItems].filter(i=>!despState.inStock[i.id]),despState.flex.filter(f=>!f.inStock));
 }
 
 function updateDespP(id,val){
@@ -1943,7 +1980,7 @@ function updateDespP(id,val){
   const item=DESP_ITEMS.find(i=>i.id===id);
   const el=document.getElementById('dlt-'+id);
   if(el) el.textContent='= $'+(despTotal(item)).toFixed(2);
-  recalcDesp(DESP_ITEMS.filter(i=>!despState.inStock[i.id]),despState.flex.filter(f=>!f.inStock));
+  recalcDesp([...DESP_ITEMS,...customItems].filter(i=>!despState.inStock[i.id]),despState.flex.filter(f=>!f.inStock));
 }
 
 function recalcDesp(needed,flexNeeded){
@@ -2011,7 +2048,7 @@ async function confirmPurchase(){
   const date=document.getElementById('purchase-date').value;
   if(!date){ showStatus('desp-status','warn','Selecciona la fecha de recibo'); return; }
   const btn=event.target; btn.disabled=true; btn.textContent='Guardando...';
-  const needed=DESP_ITEMS.filter(i=>!despState.inStock[i.id]);
+  const needed=[...DESP_ITEMS,...customItems].filter(i=>!despState.inStock[i.id]);
   let saved=0, failed=0, failedNames=[];
   for(const item of needed){
     const q=despQ(item); const p=despP(item); const s=despS(item); const total=q*p;
@@ -2188,6 +2225,94 @@ function onPriceBlur(id, el){
 
 function onPriceKey(e, id, el){
   if(e.key==='Enter'){ e.preventDefault(); onPriceBlur(id, el); el.blur(); }
+}
+
+
+// ── CUSTOM ITEMS ──────────────────────────────────────────────────────────────
+
+let customItems = []; // loaded from Firebase
+
+async function loadCustomItems(){
+  const raw = await fbGet('grocery_custom_items');
+  customItems = raw ? Object.entries(raw).map(([id,d])=>({...d, id})) : [];
+}
+
+function allItems(){
+  return [...DESP_ITEMS, ...customItems];
+}
+
+function showPinModal(flexIdx){
+  const f = despState.flex[flexIdx];
+  if(!f) return;
+  const cats = ['Proteínas','Granos','Despensa','Vegetales','Frutas','Abuela y niño','Personalizado'];
+  const overlay = document.createElement('div');
+  overlay.className = 'pin-modal-overlay';
+  overlay.id = 'pin-modal-overlay';
+  overlay.innerHTML = `
+    <div class="pin-modal">
+      <h3>📌 Fijar "${f.name}" como ítem permanente</h3>
+      <div class="form-group"><label>Nombre</label><input type="text" id="pin-name" value="${f.name}"></div>
+      <div class="form-group"><label>Nota (opcional)</label><input type="text" id="pin-note" placeholder="ej: abuela y niño"></div>
+      <div class="form-group"><label>Categoría</label>
+        <select id="pin-cat">${cats.map(c=>`<option value="${c}"${c==='Abuela y niño'?'':''} ${c==='Personalizado'?'selected':''}>${c}</option>`).join('')}</select>
+      </div>
+      <div class="two-col">
+        <div class="form-group"><label>Cantidad</label><input type="number" id="pin-qty" value="${f.qty}" step="0.5" min="0"></div>
+        <div class="form-group"><label>Unidad</label><input type="text" id="pin-unit" value="${f.unit||'u'}"></div>
+      </div>
+      <div class="two-col">
+        <div class="form-group"><label>Precio ref.</label><input type="number" id="pin-price" value="${f.price}" step="0.01" min="0"></div>
+        <div class="form-group"><label>Tienda</label>
+          <select id="pin-store">${DESP_STORES.map(s=>`<option value="${s}"${s===f.store?' selected':''}>${s}</option>`).join('')}</select>
+        </div>
+      </div>
+      <div class="pin-modal-btns">
+        <button class="btn btn-ghost" onclick="closePinModal()">Cancelar</button>
+        <button class="btn btn-primary" onclick="savePinItem(${flexIdx})">📌 Fijar ítem</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e=>{ if(e.target===overlay) closePinModal(); });
+}
+
+function closePinModal(){
+  const el = document.getElementById('pin-modal-overlay');
+  if(el) el.remove();
+}
+
+async function savePinItem(flexIdx){
+  const name  = document.getElementById('pin-name').value.trim();
+  const note  = document.getElementById('pin-note').value.trim();
+  const cat   = document.getElementById('pin-cat').value;
+  const qty   = parseFloat(document.getElementById('pin-qty').value)||1;
+  const unit  = document.getElementById('pin-unit').value.trim()||'u';
+  const price = parseFloat(document.getElementById('pin-price').value)||0;
+  const store = document.getElementById('pin-store').value;
+  if(!name){ alert('Escribe el nombre del ítem'); return; }
+  const newItem = { name, note, cat, qty, unit, price, store, addedDate: today() };
+  const result = await fbPush('grocery_custom_items', newItem);
+  if(result && result.name){
+    newItem.id = result.name;
+    customItems.push(newItem);
+    // Remove from flex
+    despState.flex.splice(flexIdx, 1);
+    closePinModal();
+    showStatus('desp-status','ok',`✅ "${name}" agregado a la lista fija permanente`);
+    renderDespInv();
+    renderDespCompras();
+  } else {
+    alert('Error al guardar. Verifica tu conexión.');
+  }
+}
+
+async function deleteCustomItem(id, name){
+  if(!confirm(`¿Eliminar "${name}" de la lista fija? Se puede volver a agregar desde Flex.`)) return;
+  const ok = await fbDelete(`grocery_custom_items/${id}`);
+  if(ok){
+    customItems = customItems.filter(i=>i.id!==id);
+    renderDespInv();
+    renderDespCompras();
+  } else { alert('Error al eliminar. Intenta de nuevo.'); }
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
