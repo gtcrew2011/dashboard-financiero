@@ -346,6 +346,13 @@
   .pin-modal .two-col { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
   .pin-modal-btns { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:14px; }
 
+
+  .pending-banner { background:linear-gradient(135deg,rgba(69,184,172,0.12),rgba(76,175,125,0.08)); border:1px solid rgba(69,184,172,0.4); border-radius:10px; padding:12px 16px; margin-bottom:14px; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .pending-banner-text { flex:1; min-width:160px; }
+  .pending-banner-title { font-family:'Oswald',sans-serif; font-size:0.88rem; color:var(--teal); letter-spacing:0.5px; }
+  .pending-banner-sub { font-size:0.75rem; color:var(--muted); margin-top:2px; }
+  .pending-banner-btns { display:flex; gap:6px; flex-shrink:0; }
+
   /* ── DESPENSA TAB ─────────────────────────────────────────────────────── */
   .desp-subtabs { display:grid; grid-template-columns:1fr 1fr 1fr; background:var(--surface); border-radius:8px; padding:3px; gap:3px; margin-bottom:14px; }
   .desp-stab { padding:9px 6px; font-family:'Oswald',sans-serif; font-size:0.75rem; letter-spacing:0.5px; text-transform:uppercase; color:var(--muted); cursor:pointer; border-radius:6px; text-align:center; transition:all 0.15s; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -959,6 +966,7 @@
 
   <!-- INVENTARIO -->
   <div id="desp-inventario" class="desp-panel active">
+    <div id="pending-banner" style="display:none"></div>
     <div class="desp-stock-bar">
       <span class="desp-stock-label">Ítems cubiertos esta semana</span>
       <span class="desp-stock-count"><span id="desp-stocked">0</span> / <span id="desp-total">0</span></span>
@@ -995,6 +1003,8 @@
     </div>
     <div id="desp-compras-list"></div>
 
+    <button class="btn btn-full" style="background:rgba(69,184,172,0.15);border:1px solid rgba(69,184,172,0.4);color:var(--teal);font-weight:600;padding:12px;border-radius:10px;margin-top:10px;margin-bottom:4px;font-family:inherit;font-size:0.9rem;cursor:pointer" onclick="saveOrder()">📤 Guardar orden</button>
+    <div id="save-order-status" style="margin-bottom:8px"></div>
     <!-- CONFIRM PURCHASE -->
     <div class="confirm-card">
       <div class="confirm-title">✅ Confirmar compra recibida</div>
@@ -1767,6 +1777,7 @@ async function loadDespensa(){
   initDespWeek();
   renderDespInv();
   renderDespCompras();
+  checkPendingOrder();
 }
 
 function showDespTab(tab, el){
@@ -2099,6 +2110,7 @@ async function confirmPurchase(){
   }
   btn.disabled=false; btn.textContent='📦 Registrar compra — guardar historial';
   if(failed===0){
+    await fbDelete('grocery_pending_order');
     despState.inCart={}; despState.inStock={}; despState.flex=[];
     document.getElementById('desp-notes').value='';
     showStatus('desp-status','ok',`✅ ${saved} ítems guardados en Firebase — ${fmtDate(date)}`);
@@ -2364,6 +2376,88 @@ async function deleteCustomItem(id, name){
     renderDespInv();
     renderDespCompras();
   } else { alert('Error al eliminar. Intenta de nuevo.'); }
+}
+
+
+// ── ORDEN PENDIENTE ───────────────────────────────────────────────────────────
+
+async function saveOrder(){
+  const needed = [...DESP_ITEMS,...customItems].filter(i=>!despState.inStock[i.id]);
+  const itemsSnap = {};
+  needed.forEach(item=>{
+    itemsSnap[item.id]={qty:despQ(item), price:despP(item), store:despS(item)};
+  });
+  const order = {
+    savedAt: new Date().toISOString(),
+    weekLabel: document.getElementById('desp-week-label').textContent,
+    weekKey: document.getElementById('desp-week').value,
+    inStock: {...despState.inStock},
+    items: itemsSnap,
+    flexItems: despState.flex.map(f=>({...f}))
+  };
+  const ok = await fbSet('grocery_pending_order', order);
+  if(ok){
+    showStatus('save-order-status','ok','✅ Orden guardada — el sábado carga aquí automáticamente');
+    setTimeout(()=>{ const el=document.getElementById('save-order-status'); if(el) el.innerHTML=''; }, 4000);
+  } else {
+    showStatus('save-order-status','warn','❌ Error al guardar. Verifica conexión.');
+  }
+}
+
+async function checkPendingOrder(){
+  const order = await fbGet('grocery_pending_order');
+  const banner = document.getElementById('pending-banner');
+  if(!order || !banner) return;
+  const savedDate = order.savedAt ? new Date(order.savedAt) : null;
+  const dateStr = savedDate ? savedDate.toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'short'}) : 'fecha desconocida';
+  const itemCount = order.items ? Object.keys(order.items).length : 0;
+  const flexCount = order.flexItems ? order.flexItems.length : 0;
+  banner.style.display = 'flex';
+  banner.innerHTML = `
+    <div class="pending-banner-text">
+      <div class="pending-banner-title">📦 Orden guardada — ${order.weekLabel||''}</div>
+      <div class="pending-banner-sub">Guardada el ${dateStr} · ${itemCount} ítems del plan + ${flexCount} flex</div>
+    </div>
+    <div class="pending-banner-btns">
+      <button class="btn btn-ghost" style="font-size:0.78rem;padding:6px 10px" onclick="discardOrder()">Descartar</button>
+      <button class="btn btn-primary" style="font-size:0.78rem;padding:6px 12px" onclick="loadOrder()">Cargar orden →</button>
+    </div>`;
+}
+
+async function loadOrder(){
+  const order = await fbGet('grocery_pending_order');
+  if(!order) return;
+  // Restore inStock
+  despState.inStock = order.inStock || {};
+  // Restore qty/price/store overrides per item
+  if(order.items){
+    Object.entries(order.items).forEach(([id,snap])=>{
+      if(snap.qty  !== undefined) despState.qty[id]   = snap.qty;
+      if(snap.price !== undefined) despState.price[id] = snap.price;
+      if(snap.store !== undefined) despState.store[id] = snap.store;
+    });
+  }
+  // Restore flex items
+  despState.flex = order.flexItems || [];
+  // Restore week label
+  if(order.weekKey){
+    const inp = document.getElementById('desp-week');
+    if(inp){ inp.value = order.weekKey; onWeekDateChange(order.weekKey); }
+  }
+  // Hide banner
+  const banner = document.getElementById('pending-banner');
+  if(banner) banner.style.display = 'none';
+  // Go to compras tab
+  showDespTab('compras', document.querySelectorAll('.desp-stab')[1]);
+  renderDespInv();
+  renderDespCompras();
+}
+
+async function discardOrder(){
+  if(!confirm('¿Descartar la orden guardada? Se borrará permanentemente.')) return;
+  await fbDelete('grocery_pending_order');
+  const banner = document.getElementById('pending-banner');
+  if(banner) banner.style.display = 'none';
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
