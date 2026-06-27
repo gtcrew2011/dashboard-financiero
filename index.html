@@ -2102,7 +2102,7 @@ function weekRangeFromDate(dateStr){
 }
 
 
-async function editHistItem(path, name, qty, unit, price, store){
+async function editHistItem(path, name, qty, unit, price, store, date){
   const newPrice = prompt(`Editar precio de "${name}"\nPrecio actual: $${price}/${unit}\n\nNuevo precio (puedes escribir operaciones como 22.21/5):`, price);
   if(newPrice===null) return;
   const p = evalMath(newPrice);
@@ -2111,8 +2111,8 @@ async function editHistItem(path, name, qty, unit, price, store){
   if(newQty===null) return;
   const q = parseFloat(newQty)||qty;
   const total = parseFloat((q*p).toFixed(2));
-  const ok = await fbSet(path, {qty:q, price:p, store, total, _edited:true, editedAt:today()});
-  if(ok){ alert(`✅ "${name}" actualizado: ${q}${unit} × $${p.toFixed(2)} = $${total}`); loadDespHistorial(); }
+  const ok = await fbSet(path, {date:date||today(), qty:q, price:p, store, total, ts:Date.now(), _edited:true, editedAt:today()});
+  if(ok){ alert(`✅ "${name}" actualizado\n${q} ${unit} × $${p.toFixed(2)} = $${total}`); loadDespHistorial(); }
   else { alert('Error al actualizar. Intenta de nuevo.'); }
 }
 
@@ -2139,7 +2139,7 @@ async function loadDespHistorial(){
         seenInHistory.add(itemId);
         const wk = weekRangeFromDate(p.date);
         if(!weeks[wk.key]) weeks[wk.key]={label:wk.label,items:[],flexItems:[]};
-        weeks[wk.key].items.push({name,qty:p.qty||0,unit,price:p.price||0,store:p.store||'',total:p.total||0,_path:`grocery_item_history/${itemId}/${pushId}`,_itemId:itemId,_pushId:pushId});
+        weeks[wk.key].items.push({name,qty:p.qty||0,unit,price:p.price||0,store:p.store||'',total:p.total||0,date:p.date||'',_path:`grocery_item_history/${itemId}/${pushId}`,_itemId:itemId,_pushId:pushId});
       });
     });
   }
@@ -2198,7 +2198,7 @@ async function loadDespHistorial(){
       items.forEach(i=>{
         const detail=i.unit==='lb'?`${i.qty}lb x $${parseFloat(i.price).toFixed(2)}/lb`:i.qty>1?`${i.qty} x $${parseFloat(i.price).toFixed(2)}`:`$${parseFloat(i.price).toFixed(2)}`;
         const editPath=i._path||'';
-        detailHtml+=`<div class="hist-item-row"><span class="hist-item-name">${i.name}</span><span class="hist-item-detail">${detail}</span><span class="hist-item-total">${fmt(i.total)}</span>${editPath?`<button onclick="editHistItem('${editPath}','${i.name}',${i.qty},'${i.unit}',${i.price},'${i.store}')" style="background:none;border:none;color:var(--muted);font-size:0.7rem;cursor:pointer;margin-left:6px">✏️</button>`:''}</div>`;
+        detailHtml+=`<div class="hist-item-row"><span class="hist-item-name">${i.name}</span><span class="hist-item-detail">${detail}</span><span class="hist-item-total">${fmt(i.total)}</span>${editPath?`<button onclick="editHistItem('${editPath}','${i.name}',${i.qty},'${i.unit}',${i.price},'${i.store}','${i.date}')" style="background:none;border:none;color:var(--muted);font-size:0.7rem;cursor:pointer;margin-left:6px">✏️</button>`:''}</div>`;
       });
       detailHtml+=`<div class="hist-store-sub"><span>Subtotal ${store}</span><span>${fmt(st)}</span></div>`;
     });
