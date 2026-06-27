@@ -1793,7 +1793,7 @@ function renderDespInv(){
           </div>
           <div class="desp-right">
             <span class="store-tag" style="background:${DSC[s]}" onclick="cycleDespStore('${item.id}')">${s}</span>
-            <input type="text" class="desp-num-price" style="margin-top:3px;width:80px" value="${getPrice(item).toFixed(2)}" oninput="onPriceInput(this)" onblur="onInvPriceBlur('${item.id}',this)" onkeypress="onPriceKey(event,'${item.id}',this)" title="${item.unit==='lb'?'Precio/lb · acepta operaciones: ej 22.21/5':'Precio/u · acepta operaciones'}">
+            <input type="text" class="desp-num-price" style="margin-top:3px;width:80px" value="${despP(item).toFixed(2)}" oninput="onPriceInput(this)" onblur="onInvPriceBlur('${item.id}',this)" onkeypress="onPriceKey(event,'${item.id}',this)" title="${item.unit==='lb'?'Precio/lb · acepta operaciones: ej 22.21/5':'Precio/u · acepta operaciones'}">
             ${lastBuyHtml(item.id)}
           </div>
         </div>
@@ -1815,7 +1815,7 @@ function renderDespInv(){
           </div>
           <div class="desp-right">
             <span class="store-tag" style="background:${DSC[s]}" onclick="cycleDespStore('${item.id}')">${s}</span>
-            <input type="text" class="desp-num-price" style="margin-top:3px;width:80px" value="${getPrice(item).toFixed(2)}" oninput="onPriceInput(this)" onblur="onInvPriceBlur('${item.id}',this)" onkeypress="onPriceKey(event,'${item.id}',this)" title="Precio/unidad · acepta operaciones">
+            <input type="text" class="desp-num-price" style="margin-top:3px;width:80px" value="${despP(item).toFixed(2)}" oninput="onPriceInput(this)" onblur="onInvPriceBlur('${item.id}',this)" onkeypress="onPriceKey(event,'${item.id}',this)" title="Precio/unidad · acepta operaciones">
             ${lastBuyHtml(item.id)}
             <button class="desp-del-btn" onclick="deleteCustomItem('${item.id}','${item.name.replace(/'/g,"\'")}')">✕ quitar de fijo</button>
           </div>
