@@ -391,7 +391,7 @@
   .desp-cart-note { font-size:0.72rem; color:var(--muted); margin-top:1px; }
   .desp-cart-right { padding:6px 12px 6px 4px; display:flex; flex-direction:column; align-items:flex-end; gap:4px; min-width:120px; }
   .desp-inputs { display:flex; align-items:center; gap:3px; }
-  .desp-num { width:44px; background:var(--surface); border:1px solid var(--border); border-radius:6px; color:var(--text); font-family:'Inter',sans-serif; font-size:0.78rem; padding:3px 5px; text-align:right; outline:none; }
+  .desp-num { width:52px; background:var(--surface); border:1px solid var(--border); border-radius:6px; color:var(--text); font-family:'Inter',sans-serif; font-size:0.78rem; padding:3px 5px; text-align:right; outline:none; }
   .desp-num-price { width:72px; background:var(--surface); border:1px solid var(--border); border-radius:6px; color:var(--text); font-family:'Inter',sans-serif; font-size:0.78rem; padding:3px 6px; text-align:right; outline:none; }
   .desp-num-price:focus { border-color:var(--teal); }
   .desp-num-price.calc { border-color:var(--gold); color:var(--gold); }
@@ -1791,6 +1791,7 @@ function renderDespInv(){
           </div>
           <div class="desp-right">
             <span class="store-tag" style="background:${DSC[s]}" onclick="cycleDespStore('${item.id}')">${s}</span>
+            <input type="text" class="desp-num-price" style="margin-top:3px;width:80px" value="${getPrice(item).toFixed(2)}" oninput="onPriceInput(this)" onblur="onInvPriceBlur('${item.id}',this)" onkeypress="onPriceKey(event,'${item.id}',this)" title="${item.unit==='lb'?'Precio/lb · acepta operaciones: ej 22.21/5':'Precio/u · acepta operaciones'}">
             ${lastBuyHtml(item.id)}
           </div>
         </div>
@@ -1812,6 +1813,7 @@ function renderDespInv(){
           </div>
           <div class="desp-right">
             <span class="store-tag" style="background:${DSC[s]}" onclick="cycleDespStore('${item.id}')">${s}</span>
+            <input type="text" class="desp-num-price" style="margin-top:3px;width:80px" value="${getPrice(item).toFixed(2)}" oninput="onPriceInput(this)" onblur="onInvPriceBlur('${item.id}',this)" onkeypress="onPriceKey(event,'${item.id}',this)" title="Precio/unidad · acepta operaciones">
             ${lastBuyHtml(item.id)}
             <button class="desp-del-btn" onclick="deleteCustomItem('${item.id}','${item.name.replace(/'/g,"\'")}')">✕ quitar de fijo</button>
           </div>
@@ -1919,7 +1921,7 @@ function renderDespCompras(){
             <div class="desp-cart-right">
               <span class="store-tag" style="background:${DSC[s]};font-size:0.62rem" onclick="cycleDespStoreCart('${item.id}')">${s}</span>
               <div class="desp-inputs">
-                <input type="number" class="desp-num" value="${q}" step="0.5" min="0" oninput="updateDespQ('${item.id}',this.value)" title="Cantidad">
+                <input type="number" class="desp-num" value="${q}" step="0.5" min="0" oninput="updateDespQ('${item.id}',this.value)" title="Cantidad" step="0.01">
                 <span class="desp-unit-lbl">${item.unit} × $</span>
                 <input type="text" class="desp-num-price" value="${p.toFixed(2)}" oninput="onPriceInput(this)" onblur="onPriceBlur('${item.id}',this)" onkeypress="onPriceKey(event,'${item.id}',this)" title="Precio · puedes escribir operaciones: 26.94/3" placeholder="0.00">
               </div>
@@ -2099,9 +2101,25 @@ function weekRangeFromDate(dateStr){
   return { mon, sun, label: formatWeekLabel(mon), key: mon.toISOString().split('T')[0] };
 }
 
+
+async function editHistItem(path, name, qty, unit, price, store){
+  const newPrice = prompt(`Editar precio de "${name}"\nPrecio actual: $${price}/${unit}\n\nNuevo precio (puedes escribir operaciones como 22.21/5):`, price);
+  if(newPrice===null) return;
+  const p = evalMath(newPrice);
+  if(!p || p<=0){ alert('Precio inválido'); return; }
+  const newQty = prompt(`Cantidad actual: ${qty} ${unit}\n\nNueva cantidad:`, qty);
+  if(newQty===null) return;
+  const q = parseFloat(newQty)||qty;
+  const total = parseFloat((q*p).toFixed(2));
+  const ok = await fbSet(path, {qty:q, price:p, store, total, _edited:true, editedAt:today()});
+  if(ok){ alert(`✅ "${name}" actualizado: ${q}${unit} × $${p.toFixed(2)} = $${total}`); loadDespHistorial(); }
+  else { alert('Error al actualizar. Intenta de nuevo.'); }
+}
+
 async function loadDespHistorial(){
   const el = document.getElementById('desp-hist-list');
   el.innerHTML = '<div class="loading"><span class="spinner"></span>Cargando...</div>';
+  if(customItems.length===0) await loadCustomItems();
   const [fixedRaw, lastRaw, flexRaw] = await Promise.all([
     fbGet('grocery_item_history'),
     fbGet('grocery_last_purchase'),
@@ -2113,15 +2131,15 @@ async function loadDespHistorial(){
   // Primary: full history (multiple purchases per item)
   if(fixedRaw){
     Object.entries(fixedRaw).forEach(([itemId, purchases])=>{
-      const itemDef = DESP_ITEMS.find(i=>i.id===itemId);
-      const name = itemDef ? itemDef.name : itemId;
+      const itemDef = [...DESP_ITEMS,...customItems].find(i=>i.id===itemId);
+      const name = itemDef ? itemDef.name : ('Item '+itemId.slice(-4));
       const unit = itemDef ? itemDef.unit : 'u';
-      Object.values(purchases).forEach(p=>{
+      Object.entries(purchases).forEach(([pushId,p])=>{
         if(!p.date) return;
         seenInHistory.add(itemId);
         const wk = weekRangeFromDate(p.date);
         if(!weeks[wk.key]) weeks[wk.key]={label:wk.label,items:[],flexItems:[]};
-        weeks[wk.key].items.push({name,qty:p.qty||0,unit,price:p.price||0,store:p.store||'',total:p.total||0});
+        weeks[wk.key].items.push({name,qty:p.qty||0,unit,price:p.price||0,store:p.store||'',total:p.total||0,_path:`grocery_item_history/${itemId}/${pushId}`,_itemId:itemId,_pushId:pushId});
       });
     });
   }
@@ -2131,9 +2149,9 @@ async function loadDespHistorial(){
     Object.entries(lastRaw).forEach(([itemId, p])=>{
       if(seenInHistory.has(itemId)) return;
       if(!p.date) return;
-      const itemDef = DESP_ITEMS.find(i=>i.id===itemId);
-      const name = itemDef ? itemDef.name : itemId;
-      const unit = itemDef ? itemDef.unit : 'u';
+      const itemDef2 = [...DESP_ITEMS,...customItems].find(i=>i.id===itemId);
+      const name = itemDef2 ? itemDef2.name : ('Item '+itemId.slice(-4));
+      const unit = itemDef2 ? itemDef2.unit : 'u';
       const wk = weekRangeFromDate(p.date);
       if(!weeks[wk.key]) weeks[wk.key]={label:wk.label,items:[],flexItems:[]};
       weeks[wk.key].items.push({name,qty:p.qty||0,unit,price:p.price||0,store:p.store||'',total:p.total||0});
@@ -2179,7 +2197,8 @@ async function loadDespHistorial(){
       detailHtml+=`<div class="hist-store-hdr">${store}</div>`;
       items.forEach(i=>{
         const detail=i.unit==='lb'?`${i.qty}lb x $${parseFloat(i.price).toFixed(2)}/lb`:i.qty>1?`${i.qty} x $${parseFloat(i.price).toFixed(2)}`:`$${parseFloat(i.price).toFixed(2)}`;
-        detailHtml+=`<div class="hist-item-row"><span class="hist-item-name">${i.name}</span><span class="hist-item-detail">${detail}</span><span class="hist-item-total">${fmt(i.total)}</span></div>`;
+        const editPath=i._path||'';
+        detailHtml+=`<div class="hist-item-row"><span class="hist-item-name">${i.name}</span><span class="hist-item-detail">${detail}</span><span class="hist-item-total">${fmt(i.total)}</span>${editPath?`<button onclick="editHistItem('${editPath}','${i.name}',${i.qty},'${i.unit}',${i.price},'${i.store}')" style="background:none;border:none;color:var(--muted);font-size:0.7rem;cursor:pointer;margin-left:6px">✏️</button>`:''}</div>`;
       });
       detailHtml+=`<div class="hist-store-sub"><span>Subtotal ${store}</span><span>${fmt(st)}</span></div>`;
     });
@@ -2207,8 +2226,18 @@ function evalMath(val){
   if(!clean) return 0;
   try {
     const result = Function('"use strict"; return ('+clean+')')();
-    return isFinite(result) ? Math.round(result*100)/100 : 0;
+    const r = Math.round(result*1000)/1000; return isFinite(r) ? parseFloat(r.toFixed(2)) : 0;
   } catch(e){ return parseFloat(val)||0; }
+}
+
+
+function onInvPriceBlur(id, el){
+  const result = evalMath(el.value);
+  el.value = result.toFixed(2);
+  el.classList.remove('calc');
+  // Update state price so shopping list reflects the corrected price
+  despState.price[id] = result;
+  renderDespCompras();
 }
 
 function onPriceInput(el){
