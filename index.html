@@ -2154,7 +2154,7 @@ async function loadDespHistorial(){
       const unit = itemDef2 ? itemDef2.unit : 'u';
       const wk = weekRangeFromDate(p.date);
       if(!weeks[wk.key]) weeks[wk.key]={label:wk.label,items:[],flexItems:[]};
-      weeks[wk.key].items.push({name,qty:p.qty||0,unit,price:p.price||0,store:p.store||'',total:p.total||0});
+      weeks[wk.key].items.push({name,qty:p.qty||0,unit,price:p.price||0,store:p.store||'',total:p.total||0,date:p.date||'',_path:`grocery_last_purchase/${itemId}`});
     });
   }
 
