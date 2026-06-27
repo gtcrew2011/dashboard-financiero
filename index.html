@@ -2053,11 +2053,15 @@ function weekRangeFromDate(dateStr){
 async function loadDespHistorial(){
   const el = document.getElementById('desp-hist-list');
   el.innerHTML = '<div class="loading"><span class="spinner"></span>Cargando...</div>';
-  const [fixedRaw, flexRaw] = await Promise.all([
+  const [fixedRaw, lastRaw, flexRaw] = await Promise.all([
     fbGet('grocery_item_history'),
+    fbGet('grocery_last_purchase'),
     fbGet('grocery_flex_history')
   ]);
   const weeks = {};
+  const seenInHistory = new Set();
+
+  // Primary: full history (multiple purchases per item)
   if(fixedRaw){
     Object.entries(fixedRaw).forEach(([itemId, purchases])=>{
       const itemDef = DESP_ITEMS.find(i=>i.id===itemId);
@@ -2065,12 +2069,28 @@ async function loadDespHistorial(){
       const unit = itemDef ? itemDef.unit : 'u';
       Object.values(purchases).forEach(p=>{
         if(!p.date) return;
+        seenInHistory.add(itemId);
         const wk = weekRangeFromDate(p.date);
         if(!weeks[wk.key]) weeks[wk.key]={label:wk.label,items:[],flexItems:[]};
         weeks[wk.key].items.push({name,qty:p.qty||0,unit,price:p.price||0,store:p.store||'',total:p.total||0});
       });
     });
   }
+
+  // Fallback: last_purchase for items not yet in history
+  if(lastRaw){
+    Object.entries(lastRaw).forEach(([itemId, p])=>{
+      if(seenInHistory.has(itemId)) return;
+      if(!p.date) return;
+      const itemDef = DESP_ITEMS.find(i=>i.id===itemId);
+      const name = itemDef ? itemDef.name : itemId;
+      const unit = itemDef ? itemDef.unit : 'u';
+      const wk = weekRangeFromDate(p.date);
+      if(!weeks[wk.key]) weeks[wk.key]={label:wk.label,items:[],flexItems:[]};
+      weeks[wk.key].items.push({name,qty:p.qty||0,unit,price:p.price||0,store:p.store||'',total:p.total||0});
+    });
+  }
+
   if(flexRaw){
     Object.values(flexRaw).forEach(p=>{
       if(!p.date) return;
