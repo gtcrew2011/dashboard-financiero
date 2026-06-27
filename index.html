@@ -1755,8 +1755,12 @@ function lastBuyHtml(id){
 
 async function loadDespensa(){
   if(!despState.despLoaded){
-    const raw = await fbGet('grocery_last_purchase');
+    const [raw, overrides] = await Promise.all([
+      fbGet('grocery_last_purchase'),
+      fbGet('grocery_store_overrides')
+    ]);
     if(raw) Object.entries(raw).forEach(([id,d])=>{ despState.lastPurchase[id]=d; });
+    if(overrides) Object.entries(overrides).forEach(([id,store])=>{ despState.store[id]=store; });
     await loadCustomItems();
     despState.despLoaded = true;
   }
@@ -1867,11 +1871,18 @@ function toggleFlexStock(i,val){
   renderDespCompras();
 }
 
-function cycleDespStore(id){
-  const item=DESP_ITEMS.find(i=>i.id===id);
+async function cycleDespStore(id){
+  const item=[...DESP_ITEMS,...customItems].find(i=>i.id===id);
+  if(!item) return;
   const cur=despS(item);
   const idx=DESP_STORES.indexOf(cur);
-  despState.store[id]=DESP_STORES[(idx+1)%DESP_STORES.length];
+  const newStore=DESP_STORES[(idx+1)%DESP_STORES.length];
+  despState.store[id]=newStore;
+  // Persist to Firebase
+  await fbSet(`grocery_store_overrides/${id}`, newStore);
+  // If custom item, also update the item's own store field
+  const ci=customItems.find(i=>i.id===id);
+  if(ci){ ci.store=newStore; await fbSet(`grocery_custom_items/${id}/store`, newStore); }
   renderDespInv();
   renderDespCompras();
 }
@@ -1967,11 +1978,16 @@ function toggleFlexCart(i,val){
   despState.flex[i].inCart=val;
 }
 
-function cycleDespStoreCart(id){
-  const item=DESP_ITEMS.find(i=>i.id===id);
+async function cycleDespStoreCart(id){
+  const item=[...DESP_ITEMS,...customItems].find(i=>i.id===id);
+  if(!item) return;
   const cur=despS(item);
   const idx=DESP_STORES.indexOf(cur);
-  despState.store[id]=DESP_STORES[(idx+1)%DESP_STORES.length];
+  const newStore=DESP_STORES[(idx+1)%DESP_STORES.length];
+  despState.store[id]=newStore;
+  await fbSet(`grocery_store_overrides/${id}`, newStore);
+  const ci=customItems.find(i=>i.id===id);
+  if(ci){ ci.store=newStore; await fbSet(`grocery_custom_items/${id}/store`, newStore); }
   renderDespCompras();
 }
 
